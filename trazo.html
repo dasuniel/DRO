@@ -1,0 +1,1990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Trazo — learn to draw, fundamentals to manga</title>
+<meta name="description" content="A 12-week drawing curriculum and practice companion for iPad + Procreate. Fundamentals, figure drawing, and manga.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   TRAZO — design tokens
+   The metaphor of the whole app: rough work is NON-PHOTO BLUE
+   pencil; finished work is INK. Everything you complete gets
+   "inked" — blue turns to black, exactly like a manga page.
+   ============================================================ */
+:root{
+  --paper:      #f5f7f6;   /* cool bristol / manuscript paper   */
+  --paper-2:    #eceff0;   /* recessed panels                   */
+  --ink:        #17191b;   /* india ink                         */
+  --ink-soft:   #3a3f43;   /* secondary text                    */
+  --muted:      #71787d;   /* captions                          */
+  --blue:       #4f93c9;   /* non-photo blue pencil (strong)    */
+  --blue-soft:  #bcd9ee;   /* blue pencil, light pressure       */
+  --blue-faint: #dfecf6;   /* construction lines / fills        */
+  --guide:      #c4dbec;   /* trim-guide lines                  */
+  --red:        #c8402c;   /* hanko stamp red — streak only     */
+  --good:       #2e7d4f;
+  --r: 4px;                /* panel corners stay sharp          */
+  --shadow: 4px 4px 0 rgba(23,25,27,.92);
+  --font-display:'Anton', 'Arial Narrow', sans-serif;
+  --font-body:'Atkinson Hyperlegible', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono:'IBM Plex Mono', 'SFMono-Regular', Consolas, monospace;
+}
+*{ box-sizing:border-box; }
+html{ -webkit-text-size-adjust:100%; }
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:16px;
+  line-height:1.55;
+  padding:14px clamp(10px, 3vw, 28px) 60px;
+}
+/* faint paper tooth */
+body::before{
+  content:""; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background-image:radial-gradient(rgba(23,25,27,.045) 1px, transparent 1px);
+  background-size:5px 5px; opacity:.5;
+}
+.sheet{
+  position:relative; max-width:780px; margin:0 auto; z-index:1;
+}
+/* trim marks, like manga manuscript paper */
+.sheet::before, .sheet::after{
+  content:""; position:absolute; width:18px; height:18px; pointer-events:none;
+}
+.sheet::before{ top:-8px; left:-8px; border-top:1.5px solid var(--guide); border-left:1.5px solid var(--guide); }
+.sheet::after{ bottom:-8px; right:-8px; border-bottom:1.5px solid var(--guide); border-right:1.5px solid var(--guide); }
+
+/* ---------- header ---------- */
+header{
+  display:flex; align-items:flex-end; justify-content:space-between;
+  gap:12px; padding:6px 2px 14px; border-bottom:2px solid var(--ink);
+}
+.brand h1{
+  font-family:var(--font-display); font-weight:400;
+  font-size:clamp(34px, 7vw, 46px); letter-spacing:.02em;
+  margin:0; line-height:.95; text-transform:uppercase;
+}
+.brand h1 .tilde{ color:var(--blue); }
+.brand .tag{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--muted); margin-top:6px;
+}
+/* hanko streak stamp */
+.hanko{
+  flex:none; width:58px; height:58px; border-radius:50%;
+  border:2.5px solid var(--red); color:var(--red);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  font-family:var(--font-mono); transform:rotate(6deg);
+  background:
+    radial-gradient(rgba(200,64,44,.16) 1px, transparent 1px) 0 0/5px 5px,
+    var(--paper);
+}
+.hanko.zero{ border-color:var(--blue-soft); color:var(--blue); transform:rotate(0); background:var(--paper); border-style:dashed; }
+.hanko b{ font-size:21px; line-height:1; font-weight:700; }
+.hanko span{ font-size:8px; letter-spacing:.1em; text-transform:uppercase; margin-top:2px; }
+
+/* ---------- tabs ---------- */
+nav.tabs{
+  display:flex; gap:4px; margin:14px 0 18px; overflow-x:auto;
+  border-bottom:1.5px solid var(--guide); scrollbar-width:none;
+}
+nav.tabs::-webkit-scrollbar{ display:none; }
+.tab{
+  appearance:none; background:none; border:none; cursor:pointer;
+  font-family:var(--font-mono); font-size:12px; font-weight:500;
+  letter-spacing:.12em; text-transform:uppercase; color:var(--muted);
+  padding:9px 12px 11px; position:relative; white-space:nowrap;
+}
+.tab::after{
+  content:""; position:absolute; left:10px; right:10px; bottom:-1.5px;
+  height:3px; background:transparent; border-radius:2px;
+}
+.tab:hover{ color:var(--ink-soft); }
+.tab:hover::after{ background:var(--blue-soft); }
+.tab[aria-selected="true"]{ color:var(--ink); }
+.tab[aria-selected="true"]::after{ background:var(--ink); }
+
+main section[hidden]{ display:none; }
+
+/* ---------- shared bits ---------- */
+.eyebrow{
+  font-family:var(--font-mono); font-size:11px; font-weight:600;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--blue);
+  margin:26px 0 10px; display:flex; align-items:center; gap:10px;
+}
+.eyebrow::after{ content:""; flex:1; height:1.5px; background:var(--blue-faint); }
+.card{
+  background:#fff; border:1.5px solid var(--ink); border-radius:var(--r);
+  padding:16px 16px 14px; margin-bottom:14px;
+}
+.note{
+  background:var(--blue-faint); border:none; border-left:3px solid var(--blue);
+  border-radius:0 var(--r) var(--r) 0; padding:10px 12px; font-size:14px;
+  color:var(--ink-soft); margin:10px 0 0;
+}
+.btn{
+  appearance:none; cursor:pointer; font-family:var(--font-mono);
+  font-size:12.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase;
+  border:1.5px solid var(--ink); border-radius:var(--r);
+  padding:10px 16px; background:#fff; color:var(--ink);
+  transition:transform .08s ease, box-shadow .08s ease;
+}
+.btn.primary{ background:var(--ink); color:var(--paper); box-shadow:var(--shadow); box-shadow:3px 3px 0 var(--blue-soft); }
+.btn.primary:active{ transform:translate(2px,2px); box-shadow:1px 1px 0 var(--blue-soft); }
+.btn.ghost{ border-color:var(--guide); color:var(--ink-soft); }
+.btn:disabled{ opacity:.4; cursor:default; }
+.chip{
+  appearance:none; cursor:pointer; font-family:var(--font-mono); font-size:12px;
+  border:1.5px solid var(--guide); border-radius:999px; background:#fff;
+  color:var(--ink-soft); padding:6px 12px;
+}
+.chip[aria-pressed="true"]{ border-color:var(--ink); background:var(--ink); color:var(--paper); }
+:where(button, summary, input, a):focus-visible{ outline:2.5px solid var(--blue); outline-offset:2px; }
+
+/* ---------- progress overview ---------- */
+.overview{ display:flex; flex-direction:column; gap:12px; }
+.bar{
+  position:relative; height:12px; border:1.5px solid var(--ink);
+  border-radius:999px; background:repeating-linear-gradient(135deg, var(--blue-faint) 0 4px, #fff 4px 8px);
+  overflow:hidden;
+}
+.bar i{
+  position:absolute; inset:0; width:0%; background:var(--ink);
+  border-radius:999px; transition:width .4s ease;
+}
+.overview .total label{
+  display:flex; justify-content:space-between; align-items:baseline;
+  font-family:var(--font-mono); font-size:11.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--ink-soft); margin-bottom:6px;
+}
+.overview .total label b{ color:var(--ink); }
+.phases{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.phase-mini{ font-family:var(--font-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted); }
+.phase-mini .bar{ height:7px; margin-top:5px; border-width:1px; }
+
+/* ---------- week cards ---------- */
+details.fold{ background:#fff; border:1.5px solid var(--ink); border-radius:var(--r); margin-bottom:12px; }
+details.fold > summary{
+  list-style:none; cursor:pointer; display:flex; align-items:center; gap:12px;
+  padding:13px 14px;
+}
+details.fold > summary::-webkit-details-marker{ display:none; }
+details.fold > summary .caret{
+  margin-left:auto; flex:none; width:10px; height:10px;
+  border-right:2px solid var(--ink-soft); border-bottom:2px solid var(--ink-soft);
+  transform:rotate(45deg); transition:transform .15s ease;
+}
+details.fold[open] > summary .caret{ transform:rotate(-135deg); }
+.wk-badge{
+  flex:none; font-family:var(--font-mono); font-weight:700; font-size:13px;
+  width:42px; height:42px; display:flex; align-items:center; justify-content:center;
+  border:2px dashed var(--blue); color:var(--blue); border-radius:var(--r);
+  background:var(--blue-faint);
+}
+details.fold.inked .wk-badge{
+  border:2px solid var(--ink); border-style:solid; background:var(--ink); color:var(--paper);
+}
+.wk-head{ min-width:0; }
+.wk-head h3{ margin:0; font-size:16.5px; font-weight:700; line-height:1.25; }
+.wk-head .meta{
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.06em;
+  color:var(--muted); margin-top:3px; display:flex; gap:10px; flex-wrap:wrap;
+}
+.wk-head .meta .pct{ color:var(--blue); font-weight:600; }
+details.fold.inked .wk-head .meta .pct{ color:var(--good); }
+.wk-body{ border-top:1.5px solid var(--guide); padding:14px 16px 16px; }
+.wk-body h4{
+  font-family:var(--font-mono); font-size:10.5px; font-weight:700;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--muted);
+  margin:16px 0 8px;
+}
+.wk-body h4:first-child{ margin-top:2px; }
+.wk-body ul.learn{ margin:0; padding-left:20px; }
+.wk-body ul.learn li{ margin-bottom:6px; font-size:14.5px; color:var(--ink-soft); }
+.wk-body ul.learn li::marker{ color:var(--blue); }
+
+/* drills — blue pencil that gets inked */
+.drills{ display:flex; flex-direction:column; gap:2px; }
+.drill{
+  display:flex; align-items:flex-start; gap:11px; padding:8px 8px;
+  border-radius:var(--r); cursor:pointer;
+}
+.drill:hover{ background:var(--paper-2); }
+.drill input{
+  appearance:none; flex:none; width:21px; height:21px; margin:1px 0 0;
+  border:2px dashed var(--blue); border-radius:3px; background:#fff;
+  cursor:pointer; position:relative; transition:transform .1s ease;
+}
+.drill input:checked{
+  border:2px solid var(--ink); background:var(--ink); transform:rotate(-3deg);
+}
+.drill input:checked::after{
+  content:""; position:absolute; left:5px; top:1px; width:6px; height:11px;
+  border-right:2.5px solid var(--paper); border-bottom:2.5px solid var(--paper);
+  transform:rotate(40deg);
+}
+.drill span{ font-size:14.5px; }
+.drill input:checked + span{ color:var(--muted); text-decoration:line-through; text-decoration-color:var(--blue-soft); text-decoration-thickness:1.5px; }
+.goal{
+  margin-top:14px; border:1.5px dashed var(--blue); border-radius:var(--r);
+  padding:10px 12px; font-size:14px; color:var(--ink-soft); background:var(--paper);
+}
+.goal b{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--blue); display:block; margin-bottom:3px; }
+
+/* ---------- timer ---------- */
+.timer-card{ text-align:center; }
+.t-config{ display:flex; flex-direction:column; gap:10px; text-align:left; margin-bottom:10px; }
+.t-row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+.t-row .lbl{ font-family:var(--font-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); width:72px; flex:none; }
+.t-row input[type="number"]{
+  width:74px; font-family:var(--font-mono); font-size:13px; padding:6px 8px;
+  border:1.5px solid var(--guide); border-radius:var(--r); background:#fff; color:var(--ink);
+}
+.t-display{ padding:18px 0 6px; border-top:1.5px solid var(--guide); }
+.t-phase{
+  font-family:var(--font-mono); font-size:11px; font-weight:600; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--blue);
+}
+.t-phase.break{ color:var(--red); }
+.t-time{
+  font-family:var(--font-mono); font-weight:700; font-size:clamp(56px, 16vw, 88px);
+  line-height:1.05; letter-spacing:-.01em; font-variant-numeric:tabular-nums;
+}
+.t-pose{ font-family:var(--font-mono); font-size:13px; color:var(--muted); margin-bottom:12px; }
+.t-bar{ margin:0 auto 16px; max-width:420px; }
+.t-controls{ display:flex; gap:10px; justify-content:center; flex-wrap:wrap; padding-bottom:6px; }
+body.flash{ animation:poseflash .45s ease; }
+@keyframes poseflash{ 0%{ background:var(--blue-soft);} 100%{ background:var(--paper);} }
+.log{ margin-top:4px; }
+.log ul{ list-style:none; margin:8px 0 0; padding:0; }
+.log li{
+  display:flex; justify-content:space-between; font-family:var(--font-mono);
+  font-size:12.5px; color:var(--ink-soft); padding:7px 2px;
+  border-bottom:1px dashed var(--guide);
+}
+.log .empty{ color:var(--muted); font-size:13.5px; font-family:var(--font-body); padding:6px 2px; }
+
+/* ---------- prompts ---------- */
+.modes{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px; }
+.panel{
+  background:#fff; border:2px solid var(--ink); border-radius:var(--r);
+  box-shadow:var(--shadow); padding:18px 16px 16px; position:relative; overflow:hidden;
+}
+.panel::after{ /* screentone corner */
+  content:""; position:absolute; right:-26px; top:-26px; width:92px; height:92px;
+  background:radial-gradient(var(--ink) 1.2px, transparent 1.2px) 0 0/6px 6px;
+  opacity:.14; transform:rotate(8deg); pointer-events:none;
+}
+.p-row{ display:flex; align-items:baseline; gap:12px; padding:9px 0; border-bottom:1px dashed var(--guide); }
+.p-row:last-of-type{ border-bottom:none; }
+.p-row .lbl{
+  flex:none; width:88px; font-family:var(--font-mono); font-size:10px; font-weight:700;
+  letter-spacing:.16em; text-transform:uppercase; color:var(--blue);
+}
+.p-row .val{ font-size:17px; font-weight:700; min-width:0; }
+.p-row .lock{
+  margin-left:auto; flex:none; appearance:none; cursor:pointer; background:none;
+  border:1.5px solid var(--guide); border-radius:999px; font-family:var(--font-mono);
+  font-size:10px; letter-spacing:.06em; color:var(--muted); padding:3px 9px;
+}
+.p-row .lock[aria-pressed="true"]{ border-color:var(--ink); background:var(--ink); color:var(--paper); }
+.p-actions{ display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+
+/* ---------- procreate ---------- */
+.kbd{
+  font-family:var(--font-mono); font-size:12px; background:var(--paper-2);
+  border:1px solid var(--guide); border-bottom-width:2px; border-radius:4px;
+  padding:1px 6px; white-space:nowrap;
+}
+.gestures{ list-style:none; margin:0; padding:0; }
+.gestures li{ display:flex; gap:10px; align-items:baseline; padding:7px 0; border-bottom:1px dashed var(--guide); font-size:14.5px; }
+.gestures li:last-child{ border-bottom:none; }
+.gestures li .g{ flex:none; width:150px; font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); }
+.wk-body p, .fold .wk-body p{ font-size:14.5px; color:var(--ink-soft); margin:0 0 10px; }
+.stack{ list-style:none; margin:0; padding:0; counter-reset:layer; }
+.stack li{ padding:7px 0 7px 14px; border-left:3px solid var(--blue-faint); font-size:14.5px; color:var(--ink-soft); margin-bottom:2px; }
+.stack li b{ color:var(--ink); }
+
+footer{
+  margin-top:36px; padding-top:14px; border-top:1.5px solid var(--guide);
+  font-family:var(--font-mono); font-size:10.5px; letter-spacing:.1em;
+  text-transform:uppercase; color:var(--muted); display:flex; gap:8px; flex-wrap:wrap; justify-content:space-between;
+}
+
+@media (max-width:560px){
+  .phases{ grid-template-columns:1fr 1fr 1fr; gap:7px; }
+  .p-row{ flex-wrap:wrap; }
+  .p-row .lbl{ width:100%; }
+  .gestures li{ flex-direction:column; gap:2px; }
+  .gestures li .g{ width:auto; }
+}
+@media (prefers-reduced-motion: reduce){
+  *{ transition:none !important; animation:none !important; }
+}
+/* ---------------- instructional figures ---------------- */
+.fig{margin:16px 0 4px;border:1.5px solid var(--ink);background:#fbfcfa;padding:12px 12px 8px;}
+.fig svg{display:block;width:100%;height:auto;}
+.figcap{margin-top:9px;padding-top:7px;border-top:1px dashed var(--blue-soft);
+  font-family:var(--font-mono);font-size:10.5px;font-weight:600;line-height:1.55;
+  letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);}
+.figcap b{color:var(--red);letter-spacing:.12em;}
+/* stroke / fill language inside figures: blue = construction, ink = committed, red = the one thing not to get wrong */
+svg .si{stroke:var(--ink);fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round;}
+svg .sb{stroke:var(--blue);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+svg .sbd{stroke:var(--blue);fill:none;stroke-width:1.8;stroke-dasharray:5 5;stroke-linecap:round;}
+svg .sr{stroke:var(--red);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
+svg .srd{stroke:var(--red);fill:none;stroke-width:1.8;stroke-dasharray:5 5;stroke-linecap:round;}
+svg .fi{fill:var(--ink);stroke:none;}
+svg .fb{fill:var(--blue);stroke:none;}
+svg .fr{fill:var(--red);stroke:none;}
+svg .fw{fill:#fbfcfa;}
+svg .thin{stroke-width:1.4;}
+svg text{font-family:var(--font-mono);}
+svg .tx{font-size:12.5px;font-weight:600;fill:var(--ink);letter-spacing:.03em;}
+svg .txb{fill:var(--blue);}
+svg .txr{fill:var(--red);}
+svg .txs{font-size:10.5px;font-weight:500;}
+/* ---------------- interactive trainers ---------------- */
+.trainer{margin:14px 0 4px;border:1.5px solid var(--ink);background:#fbfcfa;padding:10px 12px 12px;}
+.trainer .thead{font-family:var(--font-mono);font-size:10.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--red);}
+.trainer .tsub{font-family:var(--font-body);font-size:12px;line-height:1.5;color:var(--ink-soft);margin:3px 0 9px;}
+.trainer .tsub em{color:var(--ink);font-style:italic;}
+.trainer .thold{display:block;}
+.trainer .thold svg{display:block;width:100%;height:auto;touch-action:none;-webkit-user-select:none;user-select:none;cursor:pointer;}
+svg .handle{cursor:grab;}
+.trainer .ctrls{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-top:10px;}
+.trainer input[type=range]{flex:1 1 130px;min-width:120px;accent-color:var(--red);height:26px;}
+.trainer .tchip{font-family:var(--font-mono);font-size:10px;font-weight:600;letter-spacing:.05em;
+  text-transform:uppercase;padding:5px 9px;border:1.4px solid var(--ink);background:var(--paper);
+  color:var(--ink);cursor:pointer;border-radius:2px;}
+.trainer .tchip[aria-pressed=true]{background:var(--ink);color:var(--paper);}
+.trainer .tread{font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.05em;
+  color:var(--ink);margin-left:auto;text-align:right;}
+.trainer .thint{font-family:var(--font-mono);font-size:9.5px;font-weight:600;letter-spacing:.05em;
+  text-transform:uppercase;color:var(--blue);}
+@media (max-width:520px){ .trainer .tread{margin-left:0;width:100%;text-align:left;} }
+/* ---------------- today / home ---------------- */
+.t-hero{display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.t-hero .greet{flex:1;min-width:170px;}
+.t-hero .greet h2{font-family:var(--font-display);font-weight:400;font-size:27px;line-height:1.02;margin:0;letter-spacing:.01em;}
+.t-hero .greet .sub{font-family:var(--font-mono);font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);margin-top:5px;}
+.t-streak{border:2px solid var(--red);padding:7px 16px;text-align:center;min-width:72px;}
+.t-streak b{display:block;font-family:var(--font-display);font-weight:400;font-size:30px;color:var(--red);line-height:1;}
+.t-streak span{font-family:var(--font-mono);font-size:8px;letter-spacing:.13em;text-transform:uppercase;color:var(--ink-soft);}
+.t-streak.zero{border-color:var(--guide);}
+.t-streak.zero b{color:var(--ink-soft);}
+.t-status{font-family:var(--font-body);font-size:13px;color:var(--ink-soft);margin:13px 0 0;line-height:1.5;}
+.t-step{padding:13px 0;border-top:1px dashed var(--blue-soft);}
+.t-step:first-of-type{border-top:0;padding-top:4px;}
+.t-step .sh{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.t-step .sn{font-family:var(--font-mono);font-size:10px;font-weight:700;color:var(--paper);background:var(--ink);padding:2px 7px;letter-spacing:.1em;}
+.t-step .st{font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink);}
+.t-step .sx{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);margin-left:auto;}
+.t-step .sd{font-family:var(--font-body);font-size:12.5px;color:var(--ink-soft);margin:0 0 9px;line-height:1.5;}
+.linkish{background:none;border:0;color:var(--blue);font-family:var(--font-mono);font-size:10px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.06em;cursor:pointer;padding:4px 0;text-decoration:underline;text-underline-offset:2px;}
+.linkish:hover{color:var(--ink);}
+.pod{border-left:3px solid var(--red);background:var(--paper-2);padding:10px 12px;
+  font-family:var(--font-body);font-size:14px;line-height:1.45;font-style:italic;color:var(--ink);}
+.t-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.t-stat{border:1.4px solid var(--ink);padding:9px 6px;text-align:center;}
+.t-stat b{display:block;font-family:var(--font-display);font-weight:400;font-size:23px;line-height:1;}
+.t-stat span{font-family:var(--font-mono);font-size:8px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);}
+.t-phasebar{margin-top:13px;}
+.t-phasebar .row{display:flex;align-items:center;gap:9px;margin-top:7px;
+  font-family:var(--font-mono);font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);}
+.t-phasebar .row .nm{width:84px;flex:none;}
+.t-phasebar .row .bar{flex:1;height:7px;margin:0;border-width:1px;}
+.t-phasebar .row .pc{width:32px;text-align:right;flex:none;}
+@media (max-width:520px){ .t-stats{grid-template-columns:repeat(2,1fr);} .t-phasebar .row .nm{width:64px;} }
+/* ---------------- per-drill Procreate how-to ---------------- */
+.drill-item{margin-bottom:4px;}
+.howto{display:flex;gap:8px;margin:1px 0 9px 30px;padding:7px 10px;
+  background:var(--paper-2);border-left:2.5px solid var(--blue);}
+.howto .howtag{flex:none;font-family:var(--font-mono);font-size:8.5px;font-weight:700;
+  letter-spacing:.1em;text-transform:uppercase;color:var(--blue);padding-top:1px;}
+.howto > span:last-child{font-family:var(--font-body);font-size:12px;line-height:1.5;color:var(--ink-soft);}
+.howto b{color:var(--ink);}
+@media (max-width:520px){ .howto{margin-left:0;flex-direction:column;gap:3px;} }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+<header>
+  <div class="brand">
+    <h1>Trazo<span class="tilde">.</span></h1>
+    <div class="tag">Drawing practice companion &middot; fundamentals &rarr; manga</div>
+  </div>
+  <div class="hanko zero" id="hanko" title="Practice streak — check a drill or finish a timer session today to keep it alive">
+    <b id="streakNum">0</b><span>day streak</span>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button class="tab" role="tab" data-view="today" aria-selected="true">Today</button>
+  <button class="tab" role="tab" data-view="curriculum" aria-selected="false">Curriculum</button>
+  <button class="tab" role="tab" data-view="timer" aria-selected="false">Pose timer</button>
+  <button class="tab" role="tab" data-view="prompts" aria-selected="false">Prompts</button>
+</nav>
+
+<main>
+
+<!-- ===================== TODAY ===================== -->
+<section id="view-today" role="tabpanel">
+  <div id="todayBody"></div>
+</section>
+
+<!-- ===================== CURRICULUM ===================== -->
+<section id="view-curriculum" role="tabpanel">
+
+  <div class="card overview">
+    <div class="total">
+      <label><span>Drills inked</span><b id="totalLabel">0 / 0</b></label>
+      <div class="bar"><i id="totalBar"></i></div>
+    </div>
+    <div class="phases" id="phaseBars"></div>
+  </div>
+
+  <details class="fold">
+    <summary>
+      <div class="wk-badge" style="border-style:solid;">?</div>
+      <div class="wk-head"><h3>How to use this</h3>
+        <div class="meta"><span>read me first &middot; 2 min</span></div>
+      </div>
+      <span class="caret"></span>
+    </summary>
+    <div class="wk-body">
+      <p><b>30–60 minutes a day beats 6 hours on Sunday.</b> A &ldquo;week&rdquo; here means roughly 5 practice sessions — if it takes you 10 days, that&rsquo;s fine. Don&rsquo;t skip the fundamentals to get to manga faster; weeks 9–12 only work because of weeks 1–8.</p>
+      <p>Each session: do the <b>warm-up</b> below (5 min), then work through the current week&rsquo;s drills. Check a drill off to <b>ink it</b> — blue pencil is rough work, ink is done. Checking anything keeps your streak stamp alive.</p>
+      <p>Draw everything in Procreate. Keep this page open in <b>Split View</b> next to it. Mistakes are the actual product of practice — never erase a gesture drawing, just restate the line.</p>
+      <div class="note">Rough rule: if a drill felt easy, you can move on. If it felt impossible, do half of it today and half tomorrow. &ldquo;Slightly hard&rdquo; is the zone where you improve.</div>
+    </div>
+  </details>
+
+  <details class="fold">
+    <summary>
+      <div class="wk-badge" style="border-style:solid;">&#9728;</div>
+      <div class="wk-head"><h3>Daily warm-up</h3>
+        <div class="meta"><span>5 min &middot; every session, forever</span></div>
+      </div>
+      <span class="caret"></span>
+    </summary>
+    <div class="wk-body">
+      <ul class="learn">
+        <li>10 straight lines: place two dots far apart, connect each pair with <b>one</b> confident stroke.</li>
+        <li>10 circles — 5 clockwise, 5 counter-clockwise.</li>
+        <li>5 ellipses in a row, all the same tilt and roundness.</li>
+        <li>3 boxes floating in random rotations.</li>
+        <li>1 gesture pose, 30 seconds (use the Pose timer tab).</li>
+      </ul>
+            <figure class="fig">
+      <svg viewBox="0 0 640 110" role="img" aria-label="Warm-up drills: dot-to-dot lines, ellipses, circles, C and S curves">
+      <circle cx="36" cy="56" r="3.5" class="fr"/><circle cx="150" cy="46" r="3.5" class="fr"/>
+      <line x1="40" y1="55.6" x2="146" y2="46.4" class="si" stroke-width="2.2"/>
+      <text x="28" y="96" class="tx txs txb">DOT-TO-DOT LINES</text>
+      <ellipse cx="222" cy="56" rx="16" ry="30" class="si" stroke-width="2"/>
+      <ellipse cx="252" cy="56" rx="16" ry="30" class="si" stroke-width="2"/>
+      <ellipse cx="282" cy="56" rx="16" ry="30" class="si" stroke-width="2"/>
+      <text x="204" y="96" class="tx txs txb">ELLIPSES</text>
+      <circle cx="352" cy="56" r="26" class="si" stroke-width="2"/>
+      <circle cx="408" cy="56" r="26" class="si" stroke-width="2"/>
+      <text x="330" y="96" class="tx txs txb">CIRCLES</text>
+      <path d="M480 26 C516 46 452 70 492 90" class="si" stroke-width="2.4"/>
+      <path d="M536 24 C500 52 568 64 532 92" class="si" stroke-width="2.4"/>
+      <text x="468" y="96" class="tx txs txb">C + S CURVES</text>
+      </svg>
+      <figcaption class="figcap"><b>Fig. 00</b> &mdash; The whole warm-up on one sheet. Big, fast, from the shoulder.</figcaption>
+      </figure>
+      <div class="note">Draw warm-ups from the shoulder, big and fast, on a throwaway canvas. They are not supposed to be pretty.</div>
+    </div>
+  </details>
+
+  <div class="eyebrow" style="margin-top:6px">Procreate setup &middot; read once</div>
+  <div class="note" style="margin-bottom:2px">You work only in Procreate, so the how-to for every exercise now lives on the drill itself. This is the one-time setup &mdash; learn these gestures, tools and brushes in week 1, then forget you read it.</div>
+<details class="fold">
+    <summary>
+      <div class="wk-badge" style="border-style:solid;">1</div>
+      <div class="wk-head"><h3>Canvas setup</h3><div class="meta"><span>do this once</span></div></div>
+      <span class="caret"></span>
+    </summary>
+    <div class="wk-body">
+      <p>Make one canvas called <b>DAILY</b> at <span class="kbd">Screen Size</span> and reuse it for warm-ups and drills — zero friction to start. For pieces you want to finish properly, create <span class="kbd">3000 &times; 3000 px</span> or <span class="kbd">A4 &middot; 300 DPI</span>.</p>
+      <div class="note">Bigger canvases give you fewer maximum layers — that&rsquo;s normal, not a bug. For line practice you only ever need 1–2 layers anyway.</div>
+    </div>
+  </details>
+
+  <details class="fold">
+    <summary>
+      <div class="wk-badge" style="border-style:solid;">2</div>
+      <div class="wk-head"><h3>Gestures you must know</h3><div class="meta"><span>muscle memory &middot; week 1</span></div></div>
+      <span class="caret"></span>
+    </summary>
+    <div class="wk-body">
+      <ul class="gestures">
+        <li><span class="g">2-finger tap</span><span>Undo (hold to undo fast)</span></li>
+        <li><span class="g">3-finger tap</span><span>Redo</span></li>
+        <li><span class="g">4-finger tap</span><span>Hide / show the interface</span></li>
+        <li><span class="g">3-finger swipe down</span><span>Cut / copy / paste menu</span></li>
+        <li><span class="g">Pinch</span><span>Zoom &amp; rotate; quick pinch snaps back to fit</span></li>
+        <li><span class="g">Touch &amp; hold canvas</span><span>Eyedropper — pick any color on screen</span></li>
+        <li><span class="g">Drag the color dot</span><span>ColorDrop: drop it inside a closed shape to fill</span></li>
+        <li><span class="g">Touch &amp; hold eraser</span><span>Erase with your current brush (clean matching edges)</span></li>
+        <li><span class="g">Slide the sidebar</span><span>Brush size (top) and opacity (bottom)</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="fold">
+    <summary>
+      <div class="wk-badge" style="border-style:solid;">3</div>
+      <div class="wk-head"><h3>Tools that actually matter</h3><div class="meta"><span>everything else can wait</span></div></div>
+      <span class="caret"></span>
+    </summary>
+    <div class="wk-body">
+      <ul class="gestures">
+        <li><span class="g">QuickShape</span><span>Draw a line/circle and <b>hold the pencil down</b> at the end — it snaps clean. Tap &ldquo;Edit Shape&rdquo; to adjust. Great for panels; banned during line drills.</span></li>
+        <li><span class="g">StreamLine</span><span>Per-brush smoothing (tap brush &rarr; Stroke Path). Keep it <b>low for practice</b> so you see your real line; crank it high when inking manga.</span></li>
+        <li><span class="g">Alpha Lock</span><span>2-finger swipe right on a layer — you can now only paint on existing pixels. Shading inside a silhouette becomes trivial.</span></li>
+        <li><span class="g">Clipping Mask</span><span>Tap a layer &rarr; Clipping Mask: it only shows where the layer below has pixels. The standard way to shade flat colors.</span></li>
+        <li><span class="g">Drawing Guide</span><span>Wrench &rarr; Canvas &rarr; Drawing Guide &rarr; Edit. <b>Symmetry</b> for faces, <b>Perspective</b> for backgrounds (place your vanishing points, toggle Assisted Drawing per layer).</span></li>
+        <li><span class="g">Reference window</span><span>Wrench &rarr; Canvas &rarr; Reference — float a photo or pose next to your drawing instead of switching apps.</span></li>
+        <li><span class="g">Flip horizontal</span><span>Wrench &rarr; Canvas &rarr; Flip. Do it constantly — wonky proportions jump out instantly in mirror view.</span></li>
+        <li><span class="g">Select + Transform</span><span>Lasso a too-big eye or short arm and nudge it. Fixing beats redrawing.</span></li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="fold">
+    <summary>
+      <div class="wk-badge" style="border-style:solid;">4</div>
+      <div class="wk-head"><h3>Brushes — defaults are enough</h3><div class="meta"><span>don&rsquo;t buy packs yet</span></div></div>
+      <span class="caret"></span>
+    </summary>
+    <div class="wk-body">
+      <ul class="gestures">
+        <li><span class="g">Sketching</span><span><b>6B Pencil</b> or <b>Narinder Pencil</b> — your daily drivers for weeks 1–8.</span></li>
+        <li><span class="g">Inking</span><span><b>Studio Pen</b> (crisp, pressure-sensitive line weight) and <b>Syrup</b> (juicier). Manga lives here.</span></li>
+        <li><span class="g">Shading</span><span><b>Soft Brush</b> (Airbrushing) for gradients — use sparingly; pencils keep more life.</span></li>
+        <li><span class="g">Painting</span><span><b>Round Brush</b> when you start coloring.</span></li>
+        <li><span class="g">Screentones</span><span>Explore the Textures set, or import free halftone brushes when you reach week 11.</span></li>
+      </ul>
+      <div class="note">A new brush never fixes a fundamentals problem. If a drawing fails, it&rsquo;s almost always construction or values — not the pen.</div>
+    </div>
+  </details>
+
+  <details class="fold">
+    <summary>
+      <div class="wk-badge" style="border-style:solid;">5</div>
+      <div class="wk-head"><h3>The manga layer stack</h3><div class="meta"><span>top &rarr; bottom &middot; from week 9</span></div></div>
+      <span class="caret"></span>
+    </summary>
+    <div class="wk-body">
+      <ul class="stack">
+        <li><b>Effects / tones</b> — speed lines, screentone, sparkles</li>
+        <li><b>Highlights</b> — small layer, Add or Screen blend mode</li>
+        <li><b>Shadows</b> — one gray on a <b>Multiply</b> layer, clipped to the flats</li>
+        <li><b>Flat colors</b> — base colors, filled with ColorDrop</li>
+        <li><b>INK</b> — clean lines, Studio Pen, StreamLine high</li>
+        <li><b>Blue rough</b> — your sketch in light blue, opacity ~35%</li>
+        <li><b>Background</b></li>
+      </ul>
+      <div class="note">Sketch rough in blue, ink on a layer above, then drop the rough&rsquo;s opacity — the exact workflow this app&rsquo;s blue&rarr;ink design is stolen from. Group layers per character.</div>
+    </div>
+  </details>
+
+  <details class="fold">
+    <summary>
+      <div class="wk-badge" style="border-style:solid;">6</div>
+      <div class="wk-head"><h3>Saving &amp; seeing progress</h3><div class="meta"><span>future-you says thanks</span></div></div>
+      <span class="caret"></span>
+    </summary>
+    <div class="wk-body">
+      <p>Wrench &rarr; Share: <span class="kbd">PNG</span> to post, <span class="kbd">PSD</span> as a layered backup of finished pieces. Export the <b>time-lapse</b> of anything you finish — watching yourself draw is the fastest feedback there is.</p>
+      <p>Once a month, redraw the very first thing you ever drew in week 1. Keep them all in one Procreate stack called <b>PROGRESS</b>. This folder will become your favorite thing on the iPad.</p>
+    </div>
+  </details>
+
+  <div id="weeks"></div>
+</section>
+
+<!-- ===================== TIMER ===================== -->
+<section id="view-timer" role="tabpanel" hidden>
+  <div class="card timer-card">
+    <div class="t-config">
+      <div class="t-row">
+        <span class="lbl">Pose</span>
+        <button class="chip" data-pose="30">30s</button>
+        <button class="chip" data-pose="60">1m</button>
+        <button class="chip" data-pose="120">2m</button>
+        <button class="chip" data-pose="300">5m</button>
+        <input type="number" id="poseSec" min="5" max="3600" step="5" aria-label="Pose length in seconds"> <span class="lbl" style="width:auto">sec</span>
+      </div>
+      <div class="t-row">
+        <span class="lbl">Poses</span>
+        <button class="chip" data-count="5">5</button>
+        <button class="chip" data-count="10">10</button>
+        <button class="chip" data-count="20">20</button>
+        <input type="number" id="poseCount" min="1" max="100" aria-label="Number of poses">
+      </div>
+      <div class="t-row">
+        <span class="lbl">Break</span>
+        <button class="chip" data-break="0">none</button>
+        <button class="chip" data-break="5">5s</button>
+        <button class="chip" data-break="10">10s</button>
+        <span style="flex:1"></span>
+        <button class="chip" id="soundToggle" aria-pressed="true">&#128276; sound</button>
+      </div>
+    </div>
+
+    <div class="t-display">
+      <div class="t-phase" id="tPhase">Ready</div>
+      <div class="t-time" id="tTime">1:00</div>
+      <div class="t-pose" id="tPose">pose 0 / 10</div>
+      <div class="bar t-bar"><i id="tBar"></i></div>
+      <div class="t-controls">
+        <button class="btn primary" id="tStart">Start</button>
+        <button class="btn" id="tSkip" disabled>Skip pose</button>
+        <button class="btn ghost" id="tReset" disabled>Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="note">Where to get poses: <b>line-of-action.com</b> or <b>quickposes.com</b> in Split View, photos of yourself, or pause any anime on a strong pose. For gesture work, capture the <i>motion</i>, not the outline.</div>
+
+  <div class="card log">
+    <div class="eyebrow" style="margin:0 0 4px">Session log</div>
+    <ul id="logList"></ul>
+    <div style="margin-top:10px"><button class="btn ghost" id="logClear">Clear log</button></div>
+  </div>
+</section>
+
+<!-- ===================== PROMPTS ===================== -->
+<section id="view-prompts" role="tabpanel" hidden>
+  <div class="modes" role="group" aria-label="Prompt type">
+    <button class="chip" data-mode="character" aria-pressed="true">Character</button>
+    <button class="chip" data-mode="thing" aria-pressed="false">Object &amp; scene</button>
+    <button class="chip" data-mode="manga" aria-pressed="false">Manga panel</button>
+    <button class="chip" data-mode="drill" aria-pressed="false">Warm-up drill</button>
+  </div>
+
+  <div class="panel">
+    <div id="promptRows"></div>
+    <div class="p-actions">
+      <button class="btn primary" id="newPrompt">New prompt</button>
+    </div>
+  </div>
+
+  <div class="note">Lock a line to keep it and reroll the rest. The <b>challenge</b> line is the secret ingredient — constraints force decisions, and decisions are what train your eye.</div>
+</section>
+
+
+
+</main>
+
+<footer>
+  <span>Trazo &middot; rough in blue, finish in ink</span>
+  <span>progress saves on this device</span>
+</footer>
+
+</div>
+<script>
+"use strict";
+/* ================= storage (persists in a real browser / GitHub Pages;
+   falls back to in-memory inside sandboxed previews) ================= */
+const store = (() => {
+  let ok = false; const mem = {};
+  try { localStorage.setItem("__t","1"); localStorage.removeItem("__t"); ok = true; } catch(e){ ok = false; }
+  return {
+    get(k, d){ try { const v = ok ? localStorage.getItem(k) : mem[k]; return v == null ? d : JSON.parse(v); } catch(e){ return d; } },
+    set(k, v){ try { const s = JSON.stringify(v); if (ok) localStorage.setItem(k, s); else mem[k] = s; } catch(e){} }
+  };
+})();
+const KEY = "trazo_v1";
+const state = Object.assign(
+  { done:{}, streak:{count:0,last:null}, sessions:[], tab:"today", todayPrompt:null,
+    cfg:{poseSec:60, poses:10, breakSec:0, sound:true} },
+  store.get(KEY, {})
+);
+const save = () => store.set(KEY, state);
+const $  = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+
+/* ================= instructional figures =================
+   Blue = construction / guide. Ink = committed line. Red = the one thing
+   to not get wrong. Same language as the rest of the app. */
+const DIAGRAMS = {
+
+1: { cap: "Ghost the stroke 2-3 times, commit once. Long lines swing from the shoulder, not the wrist.",
+svg: `<svg viewBox="0 0 640 200" role="img" aria-label="Ghosting a line and drawing from the shoulder">
+<line x1="318" y1="14" x2="318" y2="186" class="sbd" opacity=".45"/>
+<text x="30" y="32" class="tx txb">GHOST &#215;2&#8211;3 &#8212; hover, no contact</text>
+<path d="M36 64 C120 54, 210 70, 292 58" class="sbd"/>
+<path d="M36 80 C120 70, 210 86, 292 74" class="sbd" opacity=".55"/>
+<line x1="160" y1="94" x2="160" y2="116" class="sb"/>
+<polygon points="160,124 154,113 166,113" class="fb"/>
+<path d="M36 146 C120 138, 210 150, 292 140" class="si" stroke-width="3.4"/>
+<text x="36" y="180" class="tx">COMMIT &#215;1 &#8212; one fast motion</text>
+<circle cx="372" cy="160" r="5" class="fr"/>
+<text x="350" y="186" class="tx txr txs">PIVOT</text>
+<path d="M372 118 A42 42 0 0 1 414 160" class="sb thin"/>
+<text x="420" y="132" class="tx txb txs">wrist: tiny detail only</text>
+<path d="M372 28 A132 132 0 0 1 504 160" class="sb" stroke-width="2.6"/>
+<polygon points="504,170 497,156 511,157" class="fb"/>
+<line x1="372" y1="160" x2="496" y2="52" class="si thin"/>
+<polygon points="502,44 489,50 496,58" class="fi"/>
+<text x="430" y="28" class="tx">shoulder: long clean lines</text>
+</svg>` },
+
+2: { cap: "Every flat shape becomes a solid form: add contour lines, depth edges, an ellipse base.",
+svg: `<svg viewBox="0 0 640 258" role="img" aria-label="Circle to sphere, square to cube, triangle to cone">
+<text x="22" y="26" class="tx txb">FLAT</text>
+<text x="22" y="196" class="tx">FORM</text>
+<circle cx="120" cy="76" r="36" class="si"/>
+<rect x="284" y="40" width="72" height="72" class="si" fill="none"/>
+<polygon points="520,40 484,112 556,112" class="si" fill="none"/>
+<line x1="120" y1="122" x2="120" y2="140" class="sb"/><polygon points="120,148 114,137 126,137" class="fb"/>
+<line x1="320" y1="122" x2="320" y2="140" class="sb"/><polygon points="320,148 314,137 326,137" class="fb"/>
+<line x1="520" y1="122" x2="520" y2="140" class="sb"/><polygon points="520,148 514,137 526,137" class="fb"/>
+<circle cx="120" cy="192" r="38" class="si"/>
+<ellipse cx="120" cy="192" rx="38" ry="11" class="sbd"/>
+<ellipse cx="120" cy="192" rx="11" ry="38" class="sbd" opacity=".5"/>
+<path d="M134 218 A38 38 0 0 0 150 201" class="si thin"/>
+<rect x="288" y="160" width="62" height="62" class="si" fill="none"/>
+<line x1="288" y1="160" x2="308" y2="144" class="si"/>
+<line x1="350" y1="160" x2="370" y2="144" class="si"/>
+<line x1="350" y1="222" x2="370" y2="206" class="si"/>
+<line x1="308" y1="144" x2="370" y2="144" class="si"/>
+<line x1="370" y1="144" x2="370" y2="206" class="si"/>
+<path d="M288 222 L308 206 L308 144" class="sbd" opacity=".55"/>
+<line x1="308" y1="206" x2="370" y2="206" class="sbd" opacity=".55"/>
+<ellipse cx="520" cy="214" rx="38" ry="11" class="si"/>
+<line x1="482" y1="212" x2="520" y2="142" class="si"/>
+<line x1="558" y1="212" x2="520" y2="142" class="si"/>
+<line x1="520" y1="142" x2="520" y2="214" class="sbd"/>
+<text x="120" y="250" class="tx txs txb" text-anchor="middle">+ contour lines</text>
+<text x="320" y="250" class="tx txs txb" text-anchor="middle">+ depth edges (draw through)</text>
+<text x="520" y="250" class="tx txs txb" text-anchor="middle">+ ellipse base</text>
+</svg>` },
+
+3: { cap: "Boxes obey the horizon. Head-on: one vanishing point. Corner-first: two.",
+svg: `<svg viewBox="0 0 640 240" role="img" aria-label="One point and two point perspective boxes">
+<line x1="318" y1="14" x2="318" y2="226" class="sbd" opacity=".45"/>
+<text x="30" y="36" class="tx">1-POINT</text>
+<line x1="30" y1="70" x2="300" y2="70" class="sb"/>
+<text x="34" y="62" class="tx txb txs">HL = eye level</text>
+<circle cx="220" cy="70" r="4.5" class="fr"/>
+<text x="210" y="56" class="tx txr txs">VP</text>
+<line x1="70" y1="120" x2="220" y2="70" class="sbd" opacity=".7"/>
+<line x1="150" y1="120" x2="220" y2="70" class="sbd" opacity=".7"/>
+<line x1="70" y1="190" x2="220" y2="70" class="sbd" opacity=".7"/>
+<line x1="150" y1="190" x2="220" y2="70" class="sbd" opacity=".7"/>
+<rect x="138" y="93" width="36" height="32" class="si thin" fill="none"/>
+<rect x="70" y="120" width="80" height="70" class="si" fill="none" stroke-width="3"/>
+<text x="338" y="36" class="tx">2-POINT</text>
+<line x1="338" y1="70" x2="622" y2="70" class="sb"/>
+<circle cx="350" cy="70" r="4.5" class="fr"/><text x="340" y="56" class="tx txr txs">VP</text>
+<circle cx="610" cy="70" r="4.5" class="fr"/><text x="600" y="56" class="tx txr txs">VP</text>
+<line x1="480" y1="110" x2="350" y2="70" class="sbd" opacity=".7"/>
+<line x1="480" y1="110" x2="610" y2="70" class="sbd" opacity=".7"/>
+<line x1="480" y1="200" x2="350" y2="70" class="sbd" opacity=".7"/>
+<line x1="480" y1="200" x2="610" y2="70" class="sbd" opacity=".7"/>
+<line x1="480" y1="110" x2="480" y2="200" class="si" stroke-width="3.4"/>
+<line x1="415" y1="90" x2="415" y2="135" class="si"/>
+<line x1="545" y1="90" x2="545" y2="135" class="si"/>
+<line x1="480" y1="110" x2="415" y2="90" class="si"/>
+<line x1="480" y1="110" x2="545" y2="90" class="si"/>
+<line x1="480" y1="200" x2="415" y2="135" class="si"/>
+<line x1="480" y1="200" x2="545" y2="135" class="si"/>
+<text x="338" y="226" class="tx txs txb">all edges aim at a VP &#8212; no exceptions</text>
+</svg>` },
+
+4: { cap: "One light source creates five zones. Squint and paint zones, not objects.",
+svg: `<svg viewBox="0 0 640 260" role="img" aria-label="Light and shadow zones on a sphere plus a value scale">
+<defs><pattern id="w4h" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" style="stroke:var(--ink);stroke-width:1.5"/></pattern></defs>
+<line x1="84" y1="40" x2="146" y2="86" class="sr" stroke-width="3"/>
+<polygon points="153,92 138,88 146,77" class="fr"/>
+<text x="56" y="30" class="tx txr">LIGHT</text>
+<circle cx="210" cy="132" r="72" class="si"/>
+<circle cx="182" cy="100" r="9" class="si thin"/>
+<path d="M246 70 Q190 120 148 168" class="sbd"/>
+<path d="M248 96 q8 12 1 24" class="si thin"/>
+<path d="M236 126 q8 12 0 24" class="si thin"/>
+<path d="M218 152 q7 11 -2 20" class="si thin"/>
+<ellipse cx="290" cy="226" rx="92" ry="13" fill="url(#w4h)" class="si thin"/>
+<line x1="420" y1="58" x2="186" y2="98" class="si thin" opacity=".6"/>
+<text x="424" y="62" class="tx txs">HIGHLIGHT</text>
+<line x1="420" y1="98" x2="226" y2="104" class="si thin" opacity=".6"/>
+<text x="424" y="102" class="tx txs txb">TERMINATOR</text>
+<line x1="420" y1="138" x2="238" y2="134" class="si thin" opacity=".6"/>
+<text x="424" y="142" class="tx txs">CORE SHADOW</text>
+<line x1="420" y1="178" x2="258" y2="178" class="si thin" opacity=".6"/>
+<text x="424" y="182" class="tx txs">REFLECTED LIGHT</text>
+<line x1="420" y1="218" x2="330" y2="224" class="si thin" opacity=".6"/>
+<text x="424" y="222" class="tx txs">CAST SHADOW</text>
+<text x="556" y="30" class="tx txs">VALUES</text>
+<rect x="556" y="40" width="64" height="36" class="si thin" style="fill:#fdfefe"/>
+<rect x="556" y="76" width="64" height="36" class="si thin" style="fill:#cfd6d8"/>
+<rect x="556" y="112" width="64" height="36" class="si thin" style="fill:#98a1a5"/>
+<rect x="556" y="148" width="64" height="36" class="si thin" style="fill:#4f575b"/>
+<rect x="556" y="184" width="64" height="36" class="si thin" style="fill:#17191b"/>
+</svg>` },
+
+5: { cap: "The body's half-way point is the crotch, not the waist. Wrists hang level with it.",
+svg: `<svg viewBox="0 0 640 280" role="img" aria-label="Figure proportions measured in head units">
+<line x1="150" y1="36" x2="150" y2="261" class="sb"/>
+<line x1="138" y1="36" x2="162" y2="36" class="sb"/>
+<line x1="138" y1="66" x2="162" y2="66" class="sb"/>
+<line x1="138" y1="96" x2="162" y2="96" class="sb thin"/>
+<line x1="138" y1="126" x2="162" y2="126" class="sb thin"/>
+<line x1="138" y1="156" x2="162" y2="156" class="sb"/>
+<line x1="138" y1="186" x2="162" y2="186" class="sb thin"/>
+<line x1="138" y1="216" x2="162" y2="216" class="sb thin"/>
+<line x1="138" y1="246" x2="162" y2="246" class="sb thin"/>
+<line x1="138" y1="261" x2="162" y2="261" class="sb"/>
+<text x="116" y="41" class="tx txb txs">0</text>
+<text x="116" y="71" class="tx txb txs">1</text>
+<text x="116" y="161" class="tx txb txs">4</text>
+<text x="104" y="266" class="tx txb txs">7.5</text>
+<line x1="170" y1="36" x2="170" y2="66" class="sb thin"/>
+<text x="178" y="55" class="tx txb txs">1 head</text>
+<ellipse cx="300" cy="51" rx="13" ry="15" class="si"/>
+<line x1="300" y1="66" x2="300" y2="78" class="si"/>
+<line x1="266" y1="81" x2="334" y2="81" class="si"/>
+<path d="M268 81 L286 156 M332 81 L314 156 M286 156 L282 172 L318 172 L314 156" class="si" fill="none"/>
+<path d="M266 81 L257 122 L262 156 L260 166" class="si" fill="none"/>
+<path d="M334 81 L343 122 L338 156 L340 166" class="si" fill="none"/>
+<circle cx="289" cy="216" r="2.6" class="fi"/><circle cx="311" cy="216" r="2.6" class="fi"/>
+<path d="M291 172 L289 216 L287 256 L302 260" class="si" fill="none"/>
+<path d="M309 172 L311 216 L313 256 L328 260" class="si" fill="none"/>
+<line x1="130" y1="156" x2="360" y2="156" class="srd"/>
+<text x="370" y="152" class="tx txr">&#189; HEIGHT = CROTCH</text>
+<text x="370" y="170" class="tx txr txs">(beginners put it way too low)</text>
+<line x1="368" y1="196" x2="342" y2="160" class="si thin" opacity=".6"/>
+<text x="372" y="202" class="tx txs">wrist lines up with crotch</text>
+<text x="370" y="250" class="tx">&#8776; 7.5 HEADS TALL</text>
+</svg>` },
+
+6: { cap: "Loomis in three moves: ball, cross, jaw. Features then land on the thirds by themselves.",
+svg: `<svg viewBox="0 0 640 250" role="img" aria-label="Three steps of Loomis head construction">
+<circle cx="62" cy="40" r="12" class="fi"/><text x="62" y="45" class="tx txs" text-anchor="middle" style="fill:#f5f7f6">1</text>
+<circle cx="262" cy="40" r="12" class="fi"/><text x="262" y="45" class="tx txs" text-anchor="middle" style="fill:#f5f7f6">2</text>
+<circle cx="462" cy="40" r="12" class="fi"/><text x="462" y="45" class="tx txs" text-anchor="middle" style="fill:#f5f7f6">3</text>
+<circle cx="120" cy="104" r="54" class="sb"/>
+<line x1="120" y1="50" x2="120" y2="196" class="sbd"/>
+<line x1="66" y1="104" x2="174" y2="104" class="sbd"/>
+<text x="120" y="232" class="tx txs txb" text-anchor="middle">BALL + CROSS</text>
+<circle cx="320" cy="104" r="54" class="sb"/>
+<line x1="320" y1="50" x2="320" y2="196" class="sbd" opacity=".7"/>
+<path d="M276 122 C282 162 300 188 320 194 C340 188 358 162 364 122" class="sb"/>
+<line x1="312" y1="66" x2="328" y2="66" class="si thin"/><text x="334" y="70" class="tx txs">hairline</text>
+<line x1="312" y1="104" x2="328" y2="104" class="si thin"/><text x="334" y="108" class="tx txs">brow</text>
+<line x1="312" y1="150" x2="328" y2="150" class="si thin"/><text x="334" y="154" class="tx txs">nose</text>
+<line x1="312" y1="194" x2="328" y2="194" class="si thin"/><text x="334" y="198" class="tx txs">chin</text>
+<text x="320" y="232" class="tx txs txb" text-anchor="middle">JAW + THIRDS</text>
+<circle cx="520" cy="104" r="54" class="sbd" opacity=".45"/>
+<path d="M466 104 A54 54 0 0 1 574 104" class="si" stroke-width="2.6"/>
+<path d="M574 104 C570 152 548 186 520 196 C492 186 470 152 466 104" class="si" stroke-width="2.6"/>
+<path d="M466 96 C470 44 570 44 574 96" class="si" stroke-width="2.4"/>
+<path d="M520 50 q-20 6 -28 24" class="si thin"/>
+<path d="M488 100 q12 -6 24 -2" class="si" stroke-width="2.2"/>
+<path d="M528 98 q12 -4 24 2" class="si" stroke-width="2.2"/>
+<path d="M488 118 q13 -7 26 0 q-13 8 -26 0 Z" class="si thin"/>
+<circle cx="501" cy="118" r="3" class="fi"/>
+<path d="M526 118 q13 -7 26 0 q-13 8 -26 0 Z" class="si thin"/>
+<circle cx="539" cy="118" r="3" class="fi"/>
+<path d="M520 144 q5 7 -3 9" class="si thin"/>
+<path d="M504 172 q16 7 32 0" class="si" stroke-width="2.2"/>
+<path d="M462 108 q-10 12 3 26" class="si thin"/>
+<path d="M578 108 q10 12 -3 26" class="si thin"/>
+<text x="520" y="232" class="tx txs txb" text-anchor="middle">INK FEATURES</text>
+</svg>` },
+
+7: { cap: "Pick one sweep first: C, S or I. Then hang head, ribcage and pelvis on that line.",
+svg: `<svg viewBox="0 0 640 220" role="img" aria-label="Lines of action and a figure built on an S curve">
+<line x1="318" y1="14" x2="318" y2="206" class="sbd" opacity=".45"/>
+<path d="M64 36 C26 86 30 146 72 184" class="si" stroke-width="4"/>
+<polygon points="78,190 62,186 72,174" class="fi"/>
+<path d="M158 34 C124 80 192 124 156 184" class="si" stroke-width="4"/>
+<polygon points="158,192 148,180 164,178" class="fi"/>
+<path d="M236 38 L250 184" class="si" stroke-width="4"/>
+<polygon points="252,192 242,182 258,180" class="fi"/>
+<text x="58" y="210" class="tx" text-anchor="middle">C</text>
+<text x="152" y="210" class="tx" text-anchor="middle">S</text>
+<text x="246" y="210" class="tx" text-anchor="middle">I</text>
+<path d="M448 34 C414 86 486 122 446 196" class="sr" stroke-width="3"/>
+<text x="478" y="34" class="tx txr txs">line of action</text>
+<circle cx="446" cy="44" r="13" class="si"/>
+<ellipse cx="440" cy="88" rx="26" ry="19" class="sb" transform="rotate(-18 440 88)"/>
+<ellipse cx="462" cy="142" rx="20" ry="14" class="sb" transform="rotate(20 462 142)"/>
+<path d="M424 78 q-22 18 -14 44" class="si thin"/>
+<path d="M458 74 q24 14 20 42" class="si thin"/>
+<path d="M454 154 q-26 22 -22 44" class="si thin"/>
+<path d="M470 152 q14 26 2 48" class="si thin"/>
+<text x="496" y="206" class="tx txs txb">build ON the line</text>
+</svg>` },
+
+8: { cap: "Hands: box the palm, mitten the fingers, split them only at the very end.",
+svg: `<svg viewBox="0 0 640 246" role="img" aria-label="Hand construction in three stages">
+<line x1="212" y1="130" x2="244" y2="130" class="sb"/><polygon points="252,130 241,124 241,136" class="fb"/>
+<line x1="412" y1="130" x2="444" y2="130" class="sb"/><polygon points="452,130 441,124 441,136" class="fb"/>
+<rect x="84" y="120" width="72" height="86" rx="10" class="sb" fill="none"/>
+<line x1="104" y1="206" x2="102" y2="226" class="si thin"/>
+<line x1="136" y1="206" x2="138" y2="226" class="si thin"/>
+<text x="120" y="240" class="tx txs txb" text-anchor="middle">PALM = BOX</text>
+<rect x="284" y="120" width="72" height="86" rx="10" class="sb" fill="none"/>
+<path d="M284 122 C284 60 356 60 356 122" class="sb"/>
+<path d="M284 156 C262 146 252 128 262 112 C268 102 280 112 284 130" class="sb"/>
+<line x1="304" y1="206" x2="302" y2="226" class="si thin"/>
+<line x1="336" y1="206" x2="338" y2="226" class="si thin"/>
+<text x="320" y="240" class="tx txs txb" text-anchor="middle">MITTEN + THUMB</text>
+<path d="M486 206 L486 132 L486 88 A9 9 0 0 1 504 88 L504 126 L506 80 A9 9 0 0 1 524 80 L524 124 L526 86 A9 9 0 0 1 542 86 L542 128 L544 98 A8 8 0 0 1 558 98 L558 140 L556 206" class="si" stroke-width="2.6" fill="none"/>
+<path d="M486 206 Q520 215 556 206" class="si" stroke-width="2.6"/>
+<path d="M486 168 C462 156 452 134 462 118 C470 106 484 118 488 138" class="si" stroke-width="2.6"/>
+<path d="M492 130 q6 4 12 2" class="si thin" opacity=".7"/>
+<path d="M512 126 q6 4 12 2" class="si thin" opacity=".7"/>
+<path d="M532 130 q5 4 10 2" class="si thin" opacity=".7"/>
+<line x1="572" y1="84" x2="572" y2="130" class="sb"/>
+<line x1="572" y1="136" x2="572" y2="206" class="sb"/>
+<text x="580" y="110" class="tx txs txb">fingers</text>
+<text x="580" y="174" class="tx txs txb">= palm</text>
+<text x="520" y="240" class="tx txs txb" text-anchor="middle">SPLIT LAST</text>
+</svg>` },
+
+9: { cap: "Manga face: drop the eye line low, shrink nose and mouth, spend all the detail on the eyes.",
+svg: `<svg viewBox="0 0 640 260" role="img" aria-label="Manga head construction and eye close-up">
+<line x1="330" y1="14" x2="330" y2="246" class="sbd" opacity=".45"/>
+<circle cx="160" cy="110" r="58" class="sb"/>
+<line x1="160" y1="52" x2="160" y2="228" class="sbd" opacity=".7"/>
+<path d="M106 128 A58 58 0 1 1 214 128" class="si" stroke-width="2.4"/>
+<path d="M106 128 C114 176 138 214 160 224 C182 214 206 176 214 128" class="si" stroke-width="2.4"/>
+<line x1="96" y1="146" x2="224" y2="146" class="srd"/>
+<text x="232" y="142" class="tx txr txs">eyes sit LOW &#8212;</text>
+<text x="232" y="158" class="tx txr txs">below the ball</text>
+<path d="M118 140 C128 131 142 131 150 139" class="si" stroke-width="4"/>
+<ellipse cx="134" cy="150" rx="9" ry="12" class="si" stroke-width="2"/>
+<circle cx="134" cy="151" r="3" class="fi"/>
+<circle cx="130" cy="144" r="2.6" class="fw si thin"/>
+<path d="M122 164 C130 168 142 168 148 164" class="si thin"/>
+<path d="M170 139 C178 131 192 131 202 140" class="si" stroke-width="4"/>
+<ellipse cx="186" cy="150" rx="9" ry="12" class="si" stroke-width="2"/>
+<circle cx="186" cy="151" r="3" class="fi"/>
+<circle cx="182" cy="144" r="2.6" class="fw si thin"/>
+<path d="M172 164 C180 168 192 168 198 164" class="si thin"/>
+<path d="M114 124 q18 -8 34 -3" class="si" stroke-width="2.2"/>
+<path d="M172 121 q18 -5 34 4" class="si" stroke-width="2.2"/>
+<path d="M158 176 q5 4 2 8" class="si thin"/>
+<path d="M146 200 q14 6 28 0" class="si" stroke-width="2.2"/>
+<text x="160" y="250" class="tx txs txb" text-anchor="middle">gap between eyes = one eye</text>
+<path d="M372 124 C420 86 552 88 596 122" class="si" stroke-width="9"/>
+<path d="M392 104 C440 76 540 78 580 102" class="sbd" opacity=".6"/>
+<ellipse cx="482" cy="158" rx="52" ry="62" class="si" stroke-width="3"/>
+<ellipse cx="482" cy="162" rx="18" ry="24" class="fi"/>
+<circle cx="452" cy="132" r="14" class="fw si thin"/>
+<circle cx="512" cy="186" r="6" class="fw si thin"/>
+<path d="M398 204 C440 220 540 218 580 200" class="si" stroke-width="2.5"/>
+<path d="M592 120 q14 -8 22 -18" class="si" stroke-width="3"/>
+<path d="M584 108 q10 -10 14 -20" class="si" stroke-width="3"/>
+<line x1="404" y1="56" x2="452" y2="92" class="si thin" opacity=".6"/>
+<text x="346" y="50" class="tx txs">thick top lash</text>
+<line x1="560" y1="52" x2="464" y2="124" class="si thin" opacity=".6"/>
+<text x="552" y="44" class="tx txs">highlights &#215;2</text>
+<line x1="566" y1="234" x2="540" y2="210" class="si thin" opacity=".6"/>
+<text x="500" y="248" class="tx txs">thin lower lash</text>
+</svg>` },
+
+10: { cap: "Same character, different head counts. Proportion is the style: pick a count and stick to it.",
+svg: `<svg viewBox="0 0 640 270" role="img" aria-label="Realistic, shonen and chibi proportions by head count">
+<g class="sbd" opacity=".5">
+<line x1="88" y1="38" x2="152" y2="38"/><line x1="88" y1="65" x2="152" y2="65"/><line x1="88" y1="92" x2="152" y2="92"/><line x1="88" y1="119" x2="152" y2="119"/><line x1="88" y1="146" x2="152" y2="146"/><line x1="88" y1="173" x2="152" y2="173"/><line x1="88" y1="200" x2="152" y2="200"/><line x1="88" y1="227" x2="152" y2="227"/><line x1="88" y1="240" x2="152" y2="240"/>
+<line x1="284" y1="46" x2="356" y2="46"/><line x1="284" y1="77" x2="356" y2="77"/><line x1="284" y1="108" x2="356" y2="108"/><line x1="284" y1="139" x2="356" y2="139"/><line x1="284" y1="170" x2="356" y2="170"/><line x1="284" y1="201" x2="356" y2="201"/><line x1="284" y1="232" x2="356" y2="232"/><line x1="284" y1="240" x2="356" y2="240"/>
+<line x1="486" y1="65" x2="554" y2="65"/><line x1="486" y1="135" x2="554" y2="135"/><line x1="486" y1="205" x2="554" y2="205"/><line x1="486" y1="240" x2="554" y2="240"/>
+</g>
+<ellipse cx="120" cy="51" rx="10" ry="13.5" class="si"/>
+<line x1="96" y1="78" x2="144" y2="78" class="si"/>
+<path d="M98 78 L108 146 L132 146 L142 78" class="si" fill="none"/>
+<path d="M96 78 L90 116 L94 148" class="si" fill="none"/>
+<path d="M144 78 L150 116 L146 148" class="si" fill="none"/>
+<path d="M112 146 L110 196 L108 238 L120 240" class="si" fill="none"/>
+<path d="M128 146 L130 196 L132 238 L144 240" class="si" fill="none"/>
+<text x="120" y="260" class="tx txs" text-anchor="middle">REAL &#183; 7.5 HEADS</text>
+<ellipse cx="320" cy="62" rx="12" ry="15.5" class="si"/>
+<path d="M308 50 l-7 -10 M318 47 l-2 -12 M330 48 l5 -11" class="si thin"/>
+<line x1="282" y1="93" x2="358" y2="93" class="si" stroke-width="2.6"/>
+<path d="M286 93 L302 150 L338 150 L354 93" class="si" fill="none"/>
+<path d="M282 93 L274 124 L280 154" class="si" fill="none"/>
+<path d="M358 93 L366 124 L360 154" class="si" fill="none"/>
+<path d="M308 150 L306 198 L304 236 L318 239" class="si" fill="none"/>
+<path d="M332 150 L334 198 L336 236 L350 239" class="si" fill="none"/>
+<text x="320" y="260" class="tx txs" text-anchor="middle">SHONEN &#183; 6&#8211;7</text>
+<circle cx="520" cy="98" r="33" class="si"/>
+<ellipse cx="508" cy="104" rx="4" ry="6" class="fi"/>
+<ellipse cx="532" cy="104" rx="4" ry="6" class="fi"/>
+<path d="M514 118 q6 4 12 0" class="si thin"/>
+<rect x="498" y="134" width="44" height="62" rx="14" class="si" fill="none"/>
+<path d="M498 148 L484 168" class="si" stroke-width="3"/>
+<path d="M542 148 L556 168" class="si" stroke-width="3"/>
+<path d="M508 196 L506 236 L494 238" class="si" stroke-width="3" fill="none"/>
+<path d="M532 196 L534 236 L546 238" class="si" stroke-width="3" fill="none"/>
+<text x="520" y="260" class="tx txs" text-anchor="middle">CHIBI &#183; 2&#8211;3</text>
+</svg>` },
+
+11: { cap: "Ink language: thick lines outside, thin inside. Hatch for texture, screentone dots for gray.",
+svg: `<svg viewBox="0 0 640 250" role="img" aria-label="Line weight, hatching and screentone samples">
+<defs>
+<pattern id="w11a" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" style="stroke:var(--ink);stroke-width:1.4"/></pattern>
+<pattern id="w11b" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="8" style="stroke:var(--ink);stroke-width:1.3"/><line x1="0" y1="4" x2="8" y2="4" style="stroke:var(--ink);stroke-width:1.3"/></pattern>
+<pattern id="w11c" width="11" height="11" patternUnits="userSpaceOnUse"><circle cx="5.5" cy="5.5" r="1.7" style="fill:var(--ink)"/></pattern>
+<pattern id="w11d" width="8" height="8" patternUnits="userSpaceOnUse"><circle cx="4" cy="4" r="2.2" style="fill:var(--ink)"/></pattern>
+</defs>
+<text x="24" y="28" class="tx txb">LINE WEIGHT</text>
+<path d="M52 100 C70 56 130 50 150 92 C130 134 70 140 52 100 Z" class="si" stroke-width="2" fill="none"/>
+<path d="M58 100 C90 92 120 90 144 94" class="si" stroke-width="2"/>
+<text x="162" y="100" class="tx txs">flat</text>
+<path d="M52 192 C70 148 130 142 150 184 C130 226 70 232 52 192 Z" class="si" stroke-width="4.8" fill="none"/>
+<path d="M58 192 C90 184 120 182 144 186" class="si" stroke-width="1.4"/>
+<text x="162" y="192" class="tx txs txb">thick out,</text>
+<text x="162" y="208" class="tx txs txb">thin in</text>
+<text x="268" y="28" class="tx txb">TEXTURE</text>
+<rect x="268" y="44" width="60" height="60" fill="url(#w11a)" class="si thin"/>
+<rect x="268" y="124" width="60" height="60" fill="url(#w11b)" class="si thin"/>
+<text x="340" y="80" class="tx txs">hatch</text>
+<text x="340" y="160" class="tx txs">cross-hatch</text>
+<text x="452" y="28" class="tx txb">SCREENTONE</text>
+<rect x="452" y="44" width="168" height="62" fill="url(#w11c)" class="si thin"/>
+<rect x="452" y="124" width="168" height="62" fill="url(#w11d)" class="si thin"/>
+<text x="452" y="216" class="tx txs">sparse = light gray &#183; dense = shadow</text>
+<text x="452" y="234" class="tx txs">dots do the shading, lines stay clean</text>
+</svg>` },
+
+12: { cap: "Compose before you render: park the subject on a thirds cross-point, thumbnail three ideas, ink only the winner.",
+svg: `<svg viewBox="0 0 640 230" role="img" aria-label="Rule of thirds frame and three composition thumbnails">
+<rect x="28" y="46" width="272" height="158" class="si" stroke-width="2" fill="none"/>
+<line x1="118.7" y1="46" x2="118.7" y2="204" class="sbd"/>
+<line x1="209.3" y1="46" x2="209.3" y2="204" class="sbd"/>
+<line x1="28" y1="98.7" x2="300" y2="98.7" class="sbd"/>
+<line x1="28" y1="151.3" x2="300" y2="151.3" class="sb thin"/>
+<circle cx="118.7" cy="98.7" r="5" class="fr"/>
+<circle cx="209.3" cy="98.7" r="4" class="fr" opacity=".45"/>
+<circle cx="118.7" cy="151.3" r="4" class="fr" opacity=".45"/>
+<circle cx="209.3" cy="151.3" r="4" class="fr" opacity=".45"/>
+<circle cx="118" cy="86" r="14" class="si"/>
+<path d="M96 122 Q118 102 140 122" class="si"/>
+<text x="28" y="222" class="tx txs txb">subject ON a cross-point &#183; horizon on a third</text>
+<rect x="340" y="56" width="84" height="60" class="si thin" fill="none"/>
+<path d="M352 116 C352 72 412 72 412 116" class="si thin"/>
+<circle cx="370" cy="96" r="2.2" class="fi"/><circle cx="394" cy="96" r="2.2" class="fi"/>
+<rect x="444" y="56" width="84" height="60" class="si thin" fill="none"/>
+<line x1="448" y1="102" x2="524" y2="102" class="si thin"/>
+<circle cx="486" cy="76" r="5" class="si thin"/>
+<line x1="486" y1="81" x2="486" y2="98" class="si thin"/>
+<path d="M486 98 L480 110 M486 98 L492 110" class="si thin"/>
+<rect x="548" y="56" width="84" height="60" class="si thin" fill="none"/>
+<line x1="552" y1="112" x2="628" y2="62" class="srd"/>
+<circle cx="586" cy="82" r="5" class="si thin"/>
+<line x1="588" y1="87" x2="582" y2="104" class="si thin"/>
+<text x="382" y="134" class="tx txs" text-anchor="middle">CLOSE</text>
+<text x="486" y="134" class="tx txs" text-anchor="middle">WIDE</text>
+<text x="590" y="134" class="tx txs" text-anchor="middle">DIAGONAL</text>
+<text x="340" y="176" class="tx txs txb">thumbnail 3 ideas, tiny and ugly &#8212;</text>
+<text x="340" y="194" class="tx txs txb">then ink only the winner</text>
+</svg>` }
+};
+
+/* ================= curriculum data ================= */
+const CURRICULUM = [
+{ phase:"Phase 1", name:"See & control", weeks:[
+{ w:1, title:"Line confidence", time:"30–45 min/day",
+  learn:[
+    "Draw from your shoulder and elbow, not your wrist — the wrist is for tiny detail, the arm is for lines.",
+    "Ghost every stroke: hover the pencil along the path 2–3 times, then commit in one motion.",
+    "A confident wobbly line beats a slow accurate one. Train speed first; accuracy follows within weeks.",
+    "Hold the Apple Pencil a little further back than a pen — looser grip, smoother arcs."],
+  drills:[
+    "Dots & lines: place 2 dots far apart, connect with ONE stroke. 30 pairs, all directions.",
+    "Parallel rain: fill a canvas with parallel lines — one vertical set, one horizontal, one diagonal.",
+    "30 C-curves and 30 S-curves, varying sizes.",
+    "Ellipse lanes: draw 2 parallel rails, fill the lane with ellipses touching both. 20 ellipses.",
+    "20 circles drawn in one motion each — no sketchy feathering.",
+    "Redo the dots & lines drill at the end of the week and compare with day one."],
+  tip:"Set StreamLine LOW (tap brush → Stroke Path) for all of this — heavy smoothing hides your real line and steals the practice. Use the 6B Pencil on a throwaway canvas.",
+  check:"Place a dot, aim, stroke. Hit it 7 times out of 10 with a single confident line and week 1 is done." },
+{ w:2, title:"Shapes → solid forms", time:"30–45 min/day",
+  learn:[
+    "Everything you will ever draw is spheres, boxes, cylinders and cones in a trench coat.",
+    "Draw THROUGH: sketch the hidden back edges of every form, like it is made of glass. This builds 3D thinking.",
+    "Contour lines — lines wrapping around a surface — instantly sell volume.",
+    "A slightly crooked box that feels solid beats a perfect-looking flat one."],
+  drills:[
+    "10 squares, 10 circles, 10 triangles, freehand, as accurate as you can.",
+    "30 boxes floating in random orientations, drawn through. Yes, thirty — this drill is famous for a reason.",
+    "15 cylinders at different angles. Watch the ellipses get rounder farther from eye level.",
+    "10 spheres, each with a contour cross wrapping around it.",
+    "Pick 5 objects on your desk; next to a quick sketch of each, reduce it to its basic forms.",
+    "Invent an object by combining 3 forms. Do 5 of these."],
+  tip:"Two layers from now on: construction at ~35% opacity, a cleaner pass on top. This is already the manga workflow. QuickShape stays banned for drills.",
+  check:"Do your boxes feel like you could pick them up? Do contour lines follow the surface instead of floating on it?" },
+{ w:3, title:"Perspective without tears", time:"40–60 min/day",
+  learn:[
+    "The horizon line is simply your eye level. Above it you see undersides; below it, tops.",
+    "1-point: forms facing you straight on. 2-point: forms at an angle, two vanishing points spaced WIDE apart.",
+    "Everything parallel in the real world converges to the same vanishing point on the page.",
+    "A circle in perspective is an ellipse, and its tilt follows the surface it sits on."],
+  drills:[
+    "A simple room in 1-point: back wall, side walls, a door, a window, a rug.",
+    "10 boxes in 1-point: above, below, and crossing the horizon line.",
+    "15 boxes in 2-point with both vanishing points placed OFF the canvas edges.",
+    "A street corner or simple building in 2-point.",
+    "A stack of 6 coins seen slightly from above — pure ellipse-degree control.",
+    "Your actual desk setup in rough 2-point. Ugly is fine; consistent is the goal."],
+  tip:"Wrench → Canvas → Drawing Guide → Edit → Perspective: drop the vanishing points and toggle Assisted Drawing on the layer. Then repeat half the drills with the guide OFF — the guide teaches, your arm learns.",
+  check:"Pick any two edges that are parallel in real life — do they aim at the same vanishing point in your drawing?" },
+{ w:4, title:"Light & value", time:"40–60 min/day",
+  learn:[
+    "Value (light vs dark) does 90% of the job of making things look real. Color is the last 10%.",
+    "On a lit sphere: highlight → light → halftone → core shadow → reflected light, plus a cast shadow darkest right under the object.",
+    "ONE light source. Decide where it is before the first shading stroke and never change your mind mid-drawing.",
+    "Squint at anything and detail disappears, leaving big value shapes. Those are what you draw."],
+  drills:[
+    "A 9-step value scale from white to black using only pencil pressure. Then a 5-step one.",
+    "3 shaded spheres, light from a different direction each time. Label core shadow and reflected light.",
+    "Shade a box, a cylinder and a cone under one consistent light.",
+    "A swatch page: hatching, cross-hatching, smooth pressure blending.",
+    "A 3-value study (white / mid / dark only) of a real mug in front of you.",
+    "Copy any black-and-white photo simplified to exactly 3 values."],
+  tip:"Alpha Lock a shape (2-finger swipe right on the layer) and you can shade without leaving the silhouette. Quick shadows: a new layer on Multiply, one gray, paint shadow shapes.",
+  check:"Show someone any drill from this week. Can they point to where the light comes from without hesitating?" }
+]},
+{ phase:"Phase 2", name:"Build people", weeks:[
+{ w:5, title:"Measure like an artist", time:"40–60 min/day",
+  learn:[
+    "Comparative measurement: pick a unit on the subject (a head, the mug's width) and measure everything in it.",
+    "Negative space — the shapes AROUND things — never lies. The gap between arm and body is a shape too; draw the gaps.",
+    "Check angles against imaginary vertical and horizontal lines.",
+    "Your brain 'knows' what things look like, and it is wrong. Measuring is how you override the symbol."],
+  drills:[
+    "Draw your non-drawing hand. First measure: how many palm-widths long is the middle finger?",
+    "Draw a mug with construction (cylinder first), measuring height against width.",
+    "Negative-space study of a chair: draw only the gaps and let the chair appear.",
+    "Upside-down copy: flip any line drawing upside down and copy it. It works — the symbol brain switches off.",
+    "Copy one anime screenshot, measuring everything in eye-widths.",
+    "Your headphones or controller, basic forms first, then refine."],
+  tip:"Wrench → Canvas → Flip horizontal after every drill — errors you went blind to will jump out. Keep references in the Reference window instead of app-switching.",
+  check:"Paste the original screenshot over your copy at low opacity. Are the big proportions within about 10%?" },
+{ w:6, title:"Heads that turn (Loomis)", time:"45–60 min/day",
+  learn:[
+    "The Loomis head: a ball, slice flat circles off both sides, hang the jaw from them. It works at every angle.",
+    "Face thirds: hairline → brow → bottom of nose → chin are roughly equal.",
+    "Eyes sit at the HALFWAY point of the whole skull — beginners always place them too high.",
+    "There is exactly one eye-width of space between the eyes.",
+    "Features wrap around curved planes; in a ¾ view the far side compresses."],
+  drills:[
+    "20 Loomis balls with the center-line cross, at 20 different angles. Just ball and cross.",
+    "5 complete front-view heads built from the ball.",
+    "5 profiles — the jaw-to-neck attachment is the boss fight here.",
+    "10 three-quarter heads with varied up/down tilt.",
+    "A study page each of eyes, noses, mouths, ears — 6 of each from photos.",
+    "3 heads from photos of real people. Construction first; likeness NOT required."],
+  tip:"The Symmetry guide is allowed for two front views to learn placement — then off, it becomes a crutch. Construction layer at low opacity, cleaner lines above.",
+  check:"In your ¾ heads, do both eyes sit on the same curve around the ball, with the far eye slightly narrower?" },
+{ w:7, title:"Gesture & figure", time:"45–60 min/day",
+  learn:[
+    "Gesture is the ACTION, not the outline. A great 30-second gesture looks like motion, not like a person.",
+    "Start with the line of action: one single curve the whole pose hangs on.",
+    "Mannequin the body: egg ribcage, box pelvis, ball joints, cylinder limbs.",
+    "Balance: the head stacks over the supporting foot. Off-balance reads as falling — use it only on purpose."],
+  drills:[
+    "Pose timer: 3 sessions of 10 × 60s gestures this week (the Timer tab keeps the log).",
+    "1 session of 5 × 2min: gesture first, simple mannequin on top.",
+    "A page of line-of-action ONLY — 30 seconds per pose, one curve each.",
+    "Mannequin 5 poses taken from your favorite manga panels.",
+    "The same standing pose 3 ways: balanced, leaning, mid-step."],
+  tip:"Split View: this timer on one side, Procreate on the other. One canvas per session, and never erase during gesture — restate the line over the top.",
+  check:"Show someone your fastest 30-second page. If they can act out the poses, the gesture is working." },
+{ w:8, title:"Hands, feet & fabric", time:"45–60 min/day",
+  learn:[
+    "A hand is a flat box palm (a mitten) + finger cylinders. Mitten FIRST, split into fingers LAST.",
+    "Fingers fan from arcs at the knuckles — they are not parallel sticks.",
+    "The foot is a wedge plus a toe box. From the front it is mostly ankle + wedge.",
+    "Folds radiate from tension points: shoulders, elbows, knees, anywhere fabric is pinched or pulled."],
+  drills:[
+    "20 mitten-construction hands in simple poses.",
+    "Your own hand in 5 poses — photograph it straight into the Reference window.",
+    "10 feet: side, front, ¾, mid-step.",
+    "Drape a hoodie or towel over a chair: two 10-minute fold studies.",
+    "Copy sleeves and folds from 3 manga panels, marking each tension point."],
+  tip:"Your other hand is a free model that holds any pose forever. Photograph it instead of guessing — every professional does exactly this.",
+  check:"Shrink a hand drawing to thumbnail size. Does it still read instantly as a hand AND its pose?" }
+]},
+{ phase:"Phase 3", name:"Manga & style", weeks:[
+{ w:9, title:"The manga head", time:"45–60 min/day",
+  learn:[
+    "Manga is built ON the Loomis head — same ball, same cross. The style is in what gets simplified and what gets amplified.",
+    "Eyes grow and sit slightly lower; the nose shrinks to a dot, wedge or L; the mouth gets small and expressive; the chin tapers.",
+    "Bigger eyes placed lower = younger and cuter. Narrower eyes, longer face = older and serious. That slider IS the genre (shōnen ↔ seinen).",
+    "Hair is gravity + clumps: ribbons and spikes flowing from the whorl at the crown. Draw the haircut's silhouette, never strands.",
+    "Expressions are amplified and symbolized: sweat drop, anger cross, blush strokes, sparkle eyes."],
+  drills:[
+    "Convert 3 of your week-6 realistic heads to manga at the SAME angles. The single best style exercise there is.",
+    "Eye study sheet: copy 6 eyes from 3 different manga (2 each). Note lash shape, iris size, highlight placement.",
+    "5 hairstyles on the same bald base head. Clumps, not strands.",
+    "Expression sheet for ONE character: joy, anger, shock, smug, dejected, determined.",
+    "6 manga heads: front, profile, ¾, looking up, looking down, dramatic low angle."],
+  tip:"Ink with Studio Pen, StreamLine high. Line weight rule: thickest on the head's outer silhouette, thinnest inside the face.",
+  check:"Is your expression-sheet character recognizably the SAME person across all six emotions?" },
+{ w:10, title:"Manga bodies & action", time:"45–60 min/day",
+  learn:[
+    "Pick a proportion canon and keep it: ~6 heads tall for teen leads, 7–8 heroic shōnen, 2.5–3 for chibi.",
+    "Manga simplifies anatomy into long clean curves — one confident line where realism uses three.",
+    "Dynamic pose recipe: take the reference's line of action and exaggerate it about 20% further.",
+    "Foreshortening on a budget: overlap + size change. The fist near camera is huge and drawn FIRST, overlapping everything.",
+    "The silhouette test: a pose that reads as a pure black shape is a good pose."],
+  drills:[
+    "Proportion chart: your character at 6 heads, then the same character as a 2.5-head chibi.",
+    "Rebuild 5 of your week-7 gestures as manga mannequins.",
+    "3 action poses: a punch toward camera, a jump kick, a sprint — line of action first, exaggerated.",
+    "Fill those 3 poses with solid black; fix anything that disappears in silhouette.",
+    "10 simplified manga hands: fist, open palm, pointing, holding a sword, peace sign."],
+  tip:"Rough in blue, then lasso-select and Transform to push the tilt and stretch even further before inking. Procreate makes exaggeration cheap — spend it.",
+  check:"Do your 3 action poses still read as pure silhouettes at thumbnail size?" },
+{ w:11, title:"Inking & screentones", time:"45–60 min/day",
+  learn:[
+    "Line weight is information: THICK for outer contours, shadow sides and things near camera; THIN for interior detail and the light side.",
+    "Cel shading: one light direction, hard-edged shadow shapes, one gray (two max). No soft gradients.",
+    "Spotting blacks — solid black shapes in hair, jackets, deep shadow — anchors a page and makes it pop.",
+    "Screentone dots replace gray ramps in classic manga; speed lines and focus lines aim the reader's eye."],
+  drills:[
+    "Ink 3 of your week 9–10 pencils with deliberate line weight. Slow strokes; rotate the canvas constantly.",
+    "Cel-shade the same bust twice: light from upper-left, then lit from behind (rim light).",
+    "A tone test page: hatching densities, a dot pattern, and 3 different ways of spotting blacks.",
+    "One full panel: a character with a speed-line background converging on them.",
+    "Copy the inking of ONE panel from a favorite mangaka, labeled as a study."],
+  tip:"Speed lines: set a Perspective guide with a single vanishing point on your character, Assisted Drawing on, pull lines toward it. For tones, a gray Multiply layer with a dotted texture brush sells the print look.",
+  check:"View your inked panel at 50% zoom in pure black and white. Still reads clearly? That's the printed-page test." },
+{ w:12, title:"Other styles & yours", time:"flexible — final project",
+  learn:[
+    "A style is a consistent SET of choices: proportion, shape language, line, rendering.",
+    "Western cartoon leans on shape language — round = friendly, square = solid, triangle = dynamic or dangerous.",
+    "Semi-realism keeps realistic structure and simplifies selectively (usually eyes and skin).",
+    "Your style is not invented, it is blended: 2–3 influences digested through your own hand, repeated until consistent."],
+  drills:[
+    "Same character, 3 styles: your manga style, a western cartoon, semi-real. Same pose, same costume.",
+    "Style autopsy: 3 artists you love, copy one drawing from each (as studies), write 3 bullets on what defines each.",
+    "Design an original character: model sheet with front, ¾, and 3 expressions.",
+    "Draw that character again in YOUR blend of the autopsy findings.",
+    "FINAL: one finished illustration — your character, a simple background in perspective, full ink + cel shade. 2–3 sessions."],
+  tip:"Final's layer stack: blue rough → ink → flats → Multiply shadows (clipped) → highlights → tones. Export the time-lapse when it's done. You earned it.",
+  check:"Put week 1's first page next to the final illustration. That distance is yours now — and weeks 1–8 drills never stop being useful. The loop restarts, harder." }
+]}];
+
+/* ================= prompt data ================= */
+const P = {
+  chars:["a schoolkid with a giant backpack","a retired samurai","a witch on her day off","a delivery robot","a street-food chef","a rookie magical girl","a grumpy old fisherman","a knight in dented armor","a cyborg detective","a baker covered in flour","a shrine fox spirit","an esports player at 3 a.m.","a grandma who lifts","a bounty hunter","a plant-obsessed librarian","a masked luchador","a ghost trying to be scary","an idol right after the concert","a rookie mecha pilot","a wandering swordswoman","a shady potion seller","a skater kid","a tired office worker with secret powers","a dragon in human form"],
+  things:["a koi fish","an axolotl","a crow on a wire","a cat loafing","a sleepy shiba","a vending machine at night","a steaming ramen bowl","a worn-out sneaker","a katana on its stand","a paper lantern","a scooter in the rain","a tiny island with one tree","a mushroom house","a lighthouse in a storm","a gloriously cluttered desk","a train platform at dusk","a potted monstera","an old motorcycle","a treasure chest","a retro game console","a chubby teapot","an umbrella blown inside out","a watchtower","a market stall"],
+  actions:["mid-jump","sprinting through rain","casting a spell","eating ramen way too fast","laughing uncontrollably","crying dramatic anime tears","glancing back over one shoulder","falling with style","blocking an attack","floating","charging a power move","carrying way too many bags","asleep standing up","celebrating a win","sneaking","shouting a battle cry","sharing an umbrella","striking a victory pose","brooding on a rooftop","tying their shoes mid-chaos"],
+  vibes:["cozy","ominous","sun-drenched","neon night","foggy morning","golden hour","mid-storm","festival night"],
+  styles:["manga","chibi","western cartoon","semi-realistic","pure silhouette","retro 90s anime","your own style"],
+  challenges:["only 3 values: black, gray, white","no undo allowed","10 minutes maximum","one continuous line","from imagination — no reference","draw it thumbnail-sized, 3 times","silhouette first, details after","exaggerate the pose 20% further","one brush, one size, that's it","5 minutes: biggest shapes only","rough it in blue, ink it after","add ONE prop that tells a story"],
+  shots:["extreme close-up on the eyes","low angle looking up","high angle looking down","over-the-shoulder","full-body wide shot","dutch (tilted) angle","close-up with the hands in frame"],
+  fx:["speed lines converging on them","focus lines bursting outward","heavy screentone shadow","bold black spotting","an impact flash behind them","rain streaks over everything","a single dramatic rim light"],
+  drills:["2 minutes of dots & lines — one confident stroke each","20 circles, alternating direction","Ellipse lane: two rails, 15 ellipses touching both","10 boxes drawn through, random rotations","One 9-step value scale, pressure only","5 Loomis balls at brand-new angles","4 gesture poses at 30 seconds each (timer!)","A page of C and S curves, shoulder only","Your hand, mitten-first, in 3 minutes","6 cylinders — watch the ellipse degrees","Negative-space study of whatever is in front of you","Copy one manga eye 5 times, then once from memory"]
+};
+const pick = a => a[Math.floor(Math.random()*a.length)];
+
+/* ================= streak ================= */
+const dstr = (d=new Date()) => d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+function touchStreak(){
+  const today = dstr();
+  if (state.streak.last === today) return;
+  const y = new Date(); y.setDate(y.getDate()-1);
+  state.streak.count = (state.streak.last === dstr(y)) ? state.streak.count + 1 : 1;
+  state.streak.last = today;
+  renderHanko();
+}
+function renderHanko(){
+  const today = dstr();
+  const y = new Date(); y.setDate(y.getDate()-1);
+  let n = state.streak.count;
+  if (state.streak.last !== today && state.streak.last !== dstr(y)) n = 0; // streak broken
+  $("#streakNum").textContent = n;
+  $("#hanko").classList.toggle("zero", n === 0);
+}
+
+/* ================= curriculum render ================= */
+const flatWeeks = []; CURRICULUM.forEach((ph,pi) => ph.weeks.forEach(wk => flatWeeks.push({...wk, pi})));
+function buildWeeks(){
+  const root = $("#weeks");
+  let html = "";
+  CURRICULUM.forEach((ph, pi) => {
+    html += '<div class="eyebrow">' + ph.phase + ' — ' + ph.name + '</div>';
+    ph.weeks.forEach(wk => {
+      const gw = flatWeeks.findIndex(f => f.w === wk.w);
+      html += '<details class="fold week" data-gw="' + gw + '">'
+        + '<summary><div class="wk-badge">W' + wk.w + '</div>'
+        + '<div class="wk-head"><h3>' + wk.title + '</h3>'
+        + '<div class="meta"><span>' + wk.time + '</span><span class="cnt"></span><span class="pct"></span></div></div>'
+        + '<span class="caret"></span></summary>'
+        + '<div class="wk-body">'
+        + '<h4>Learn</h4><ul class="learn">' + wk.learn.map(l => "<li>"+l+"</li>").join("") + '</ul>'
+        + (DIAGRAMS[wk.w] ? '<figure class="fig">' + DIAGRAMS[wk.w].svg
+            + '<figcaption class="figcap"><b>Fig. ' + String(wk.w).padStart(2,"0") + '</b> &mdash; '
+            + DIAGRAMS[wk.w].cap + '</figcaption></figure>' : '')
+        + (TRAINERS[wk.w] ? '<div class="trainer" data-trainer="' + TRAINERS[wk.w] + '"></div>' : '')
+        + '<h4>Drills — check to ink</h4><div class="drills">'
+        + wk.drills.map((d,j) => {
+            const id = gw + ":" + j, ck = state.done[id] ? " checked" : "";
+            const pr = (typeof PRO !== "undefined" && PRO[wk.w] && PRO[wk.w][j])
+              ? '<div class="howto"><span class="howtag">In Procreate</span><span>' + PRO[wk.w][j] + '</span></div>' : '';
+            return '<div class="drill-item"><label class="drill"><input type="checkbox" data-id="'+id+'"'+ck+'><span>'+d+'</span></label>' + pr + '</div>';
+          }).join("")
+        + '</div>'
+        + '<div class="note">' + wk.tip + '</div>'
+        + '<div class="goal"><b>Goal check</b>' + wk.check + '</div>'
+        + '</div></details>';
+    });
+  });
+  root.innerHTML = html;
+  root.addEventListener("change", e => {
+    const cb = e.target.closest("input[type=checkbox]"); if (!cb) return;
+    if (cb.checked) { state.done[cb.dataset.id] = true; touchStreak(); }
+    else delete state.done[cb.dataset.id];
+    const tmir = $('#todayBody input[data-id="'+cb.dataset.id+'"]'); if (tmir) tmir.checked = cb.checked;
+    save(); updateProgress(); renderToday();
+  });
+}
+function updateProgress(){
+  let total = 0, done = 0;
+  const phTotals = CURRICULUM.map(() => ({t:0, d:0}));
+  $$("#weeks details.week").forEach(el => {
+    const gw = +el.dataset.gw, wk = flatWeeks[gw];
+    const n = wk.drills.length;
+    const d = wk.drills.reduce((a,_,j) => a + (state.done[gw+":"+j] ? 1 : 0), 0);
+    total += n; done += d;
+    phTotals[wk.pi].t += n; phTotals[wk.pi].d += d;
+    el.classList.toggle("inked", d === n);
+    $(".cnt", el).textContent = d + "/" + n + " inked";
+    $(".pct", el).textContent = d === n ? "✓ inked" : (d ? Math.round(d/n*100) + "%" : "");
+  });
+  $("#totalLabel").textContent = done + " / " + total;
+  $("#totalBar").style.width = (total ? done/total*100 : 0) + "%";
+  $("#phaseBars").innerHTML = CURRICULUM.map((ph,i) => {
+    const p = phTotals[i], pc = p.t ? p.d/p.t*100 : 0;
+    return '<div class="phase-mini">' + ph.name + '<div class="bar"><i style="width:'+pc+'%"></i></div></div>';
+  }).join("");
+}
+
+/* ================= tabs ================= */
+function showTab(v){
+  if (!document.getElementById("view-" + v)) v = "today";
+  $$("nav .tab").forEach(b => b.setAttribute("aria-selected", b.dataset.view === v));
+  $$("main > section").forEach(s => s.hidden = (s.id !== "view-" + v));
+  if (v === "today" && typeof renderToday === "function") renderToday();
+  state.tab = v; save();
+}
+$$("nav .tab").forEach(b => b.addEventListener("click", () => showTab(b.dataset.view)));
+
+/* ================= pose timer ================= */
+const T = { phase:"idle", pose:0, remain:0, last:0, int:null };
+let actx = null;
+function beep(freq, dur, at=0){
+  if (!state.cfg.sound) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = "sine"; o.frequency.value = freq;
+    g.gain.setValueAtTime(0.0001, actx.currentTime + at);
+    g.gain.exponentialRampToValueAtTime(0.25, actx.currentTime + at + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, actx.currentTime + at + dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(actx.currentTime + at); o.stop(actx.currentTime + at + dur + 0.05);
+  } catch(e){}
+}
+const fmt = ms => { const s = Math.max(0, Math.ceil(ms/1000)); return Math.floor(s/60) + ":" + String(s%60).padStart(2,"0"); };
+function tRender(){
+  const c = state.cfg;
+  const lab = {idle:"Ready", pose:"Draw", break:"Break — shake it out", paused:"Paused", done:"Session inked ✓"}[T.phase];
+  const ph = $("#tPhase"); ph.textContent = lab; ph.classList.toggle("break", T.phase === "break");
+  $("#tTime").textContent = T.phase === "idle" ? fmt(c.poseSec*1000) : fmt(T.remain);
+  $("#tPose").textContent = "pose " + Math.min(T.pose, c.poses) + " / " + c.poses;
+  const span = (T.phase === "break" ? c.breakSec : c.poseSec) * 1000;
+  const frac = (T.phase === "pose" || T.phase === "break") ? 1 - T.remain/span : (T.phase === "done" ? 1 : 0);
+  $("#tBar").style.width = Math.min(100, Math.max(0, frac*100)) + "%";
+  $("#tStart").textContent = T.phase === "pose" || T.phase === "break" ? "Pause" : (T.phase === "paused" ? "Resume" : "Start");
+  $("#tSkip").disabled = !(T.phase === "pose" || T.phase === "paused");
+  $("#tReset").disabled = T.phase === "idle";
+}
+function flash(){ document.body.classList.remove("flash"); void document.body.offsetWidth; document.body.classList.add("flash"); }
+function startPose(n){ T.phase = "pose"; T.pose = n; T.remain = state.cfg.poseSec*1000; T.last = Date.now(); }
+function finishSession(){
+  T.phase = "done";
+  beep(880,.14); beep(660,.14,.18); beep(440,.25,.36);
+  state.sessions.unshift({ d: dstr(), n: state.cfg.poses, s: state.cfg.poseSec });
+  state.sessions = state.sessions.slice(0, 40);
+  touchStreak(); save(); renderLog(); if (typeof renderToday === "function") renderToday();
+}
+function tTick(){
+  if (T.phase !== "pose" && T.phase !== "break") return;
+  const now = Date.now(); T.remain -= now - T.last; T.last = now;
+  if (T.remain <= 0){
+    if (T.phase === "pose"){
+      if (T.pose >= state.cfg.poses){ finishSession(); }
+      else if (state.cfg.breakSec > 0){ T.phase = "break"; T.remain = state.cfg.breakSec*1000; beep(523,.12); flash(); }
+      else { startPose(T.pose+1); beep(880,.1); beep(880,.1,.16); flash(); }
+    } else { startPose(T.pose+1); beep(880,.1); beep(880,.1,.16); flash(); }
+  }
+  tRender();
+}
+$("#tStart").addEventListener("click", () => {
+  if (T.phase === "pose" || T.phase === "break"){ T.phase = "paused"; }
+  else if (T.phase === "paused"){ T.phase = T.remain > 0 ? "pose" : "pose"; T.last = Date.now(); }
+  else { startPose(1); beep(880,.1); if (!T.int) T.int = setInterval(tTick, 100); }
+  if (!T.int) T.int = setInterval(tTick, 100);
+  tRender();
+});
+$("#tSkip").addEventListener("click", () => {
+  if (T.pose >= state.cfg.poses) finishSession();
+  else { startPose(T.pose+1); beep(880,.1); flash(); }
+  tRender();
+});
+$("#tReset").addEventListener("click", () => { T.phase = "idle"; T.pose = 0; tRender(); });
+
+function syncCfgUI(){
+  const c = state.cfg;
+  $("#poseSec").value = c.poseSec; $("#poseCount").value = c.poses;
+  $$("[data-pose]").forEach(b => b.setAttribute("aria-pressed", +b.dataset.pose === c.poseSec));
+  $$("[data-count]").forEach(b => b.setAttribute("aria-pressed", +b.dataset.count === c.poses));
+  $$("[data-break]").forEach(b => b.setAttribute("aria-pressed", +b.dataset.break === c.breakSec));
+  $("#soundToggle").setAttribute("aria-pressed", String(c.sound));
+}
+$$("[data-pose]").forEach(b => b.addEventListener("click", () => { state.cfg.poseSec = +b.dataset.pose; save(); syncCfgUI(); if (T.phase==="idle") tRender(); }));
+$$("[data-count]").forEach(b => b.addEventListener("click", () => { state.cfg.poses = +b.dataset.count; save(); syncCfgUI(); tRender(); }));
+$$("[data-break]").forEach(b => b.addEventListener("click", () => { state.cfg.breakSec = +b.dataset.break; save(); syncCfgUI(); }));
+$("#poseSec").addEventListener("change", e => { state.cfg.poseSec = Math.max(5, +e.target.value || 60); save(); syncCfgUI(); if (T.phase==="idle") tRender(); });
+$("#poseCount").addEventListener("change", e => { state.cfg.poses = Math.max(1, +e.target.value || 10); save(); syncCfgUI(); tRender(); });
+$("#soundToggle").addEventListener("click", () => { state.cfg.sound = !state.cfg.sound; save(); syncCfgUI(); });
+
+function renderLog(){
+  const ul = $("#logList");
+  if (!state.sessions.length){ ul.innerHTML = '<li class="empty">No sessions yet. The first one is always the hardest to start — 5 × 30s counts.</li>'; return; }
+  ul.innerHTML = state.sessions.map(s => {
+    const len = s.s % 60 === 0 ? (s.s/60)+"m" : s.s+"s";
+    return "<li><span>" + s.d + "</span><span>" + s.n + " × " + len + "</span></li>";
+  }).join("");
+}
+$("#logClear").addEventListener("click", () => { state.sessions = []; save(); renderLog(); if (typeof renderToday === "function") renderToday(); });
+
+/* ================= prompts ================= */
+let pMode = "character", pRows = [];
+function genRows(){
+  const keep = {}; pRows.forEach(r => { if (r.locked) keep[r.key] = r; });
+  const mk = (key, label, arr) => keep[key] || { key, label, value: pick(arr), locked:false, arr };
+  if (pMode === "character") pRows = [ mk("subj","Draw",P.chars), mk("act","Doing",P.actions), mk("style","Style",P.styles), mk("chal","Challenge",P.challenges) ];
+  else if (pMode === "thing") pRows = [ mk("subj","Draw",P.things), mk("vibe","Vibe",P.vibes), mk("style","Style",P.styles), mk("chal","Challenge",P.challenges) ];
+  else if (pMode === "manga") pRows = [ mk("subj","Scene",P.chars), mk("act","Doing",P.actions), mk("shot","Shot",P.shots), mk("fx","FX",P.fx) ];
+  else pRows = [ mk("drill","Drill",P.drills) ];
+  renderRows();
+}
+function renderRows(){
+  $("#promptRows").innerHTML = pRows.map((r,i) =>
+    '<div class="p-row"><span class="lbl">' + r.label + '</span><span class="val">' + r.value + '</span>'
+    + '<button class="lock" data-i="'+i+'" aria-pressed="'+r.locked+'" aria-label="Lock this line">'+(r.locked ? "locked" : "lock")+'</button></div>'
+  ).join("");
+}
+$("#promptRows").addEventListener("click", e => {
+  const b = e.target.closest(".lock"); if (!b) return;
+  const r = pRows[+b.dataset.i]; r.locked = !r.locked; renderRows();
+});
+$("#newPrompt").addEventListener("click", () => { pRows.forEach(r => { if (!r.locked) r.value = pick(r.arr); }); renderRows(); });
+$$(".modes .chip").forEach(b => b.addEventListener("click", () => {
+  pMode = b.dataset.mode;
+  $$(".modes .chip").forEach(x => x.setAttribute("aria-pressed", x === b));
+  pRows = []; genRows();
+}));
+
+/* ================= interactive trainers =================
+   Live, drag-controlled figures for the three ideas that only
+   click once you can move them. Touch + mouse via Pointer Events.
+   Construction = blue, committed/object = ink, the thing YOU control = red. */
+
+const TRAINERS = { 3:"persp", 4:"light", 10:"prop" };
+/* ================= per-drill Procreate instructions =================
+   One line per drill, same order as each week's drills[]. */
+const PRO = {
+1:[
+ "New canvas at Screen Size, 6B Pencil, StreamLine OFF. Tap two dots, ghost above the pencil 2&ndash;3 times, then land one stroke. Two-finger tap to undo misses.",
+ "Same 6B Pencil. Rotate the canvas with two fingers between sets so every direction is a comfortable down-and-across pull, never a wrist twist.",
+ "Keep StreamLine at zero so you see your real wobble. Change brush size on the left sidebar &mdash; bigger sizes force bigger arm movement.",
+ "Rails first, then fast ellipses inside them. Resist QuickShape here: it&rsquo;s banned for line drills &mdash; the point is your hand, not the snap.",
+ "One motion each, no feathering. If one fails, two-finger tap to undo and redraw it whole &mdash; don&rsquo;t patch a bad circle.",
+ "Swipe left on day-one&rsquo;s layer &rarr; Duplicate (or open it beside you), draw today&rsquo;s set on a new layer, and toggle the eye icons to compare."],
+2:[
+ "Technical Pencil or 6B, freehand, QuickShape still off. Accuracy over speed just this once.",
+ "Sketch the hidden back edges too &mdash; lower brush opacity (bottom sidebar) for the far lines so each box reads like glass.",
+ "Two ellipses joined by straight sides. The ellipse opens up farther from eye level; rotate the canvas to confirm each looks solid.",
+ "Circle, then wrap a horizontal and vertical contour around it on a second layer at ~35% so they sit on the surface, not on top of it.",
+ "Float a quick photo in the Reference window (Wrench &rarr; Canvas &rarr; Reference); sketch the object, then the boxes and cylinders hiding inside it beside it.",
+ "Build on a 35% construction layer, then a cleaner pass on a layer above &mdash; this two-layer habit is already the manga workflow."],
+3:[
+ "Drawing Guide &rarr; Perspective, one vanishing point on the back wall, Assisted Drawing ON. Walls, floor and ceiling lines snap to the VP for you.",
+ "Keep that single guide. Place boxes above, on, and below the horizon &mdash; you see undersides up high, tops down low.",
+ "Add a second vanishing point and drag both OFF the canvas edge (pinch out to zoom way back to place them). Wide VPs look natural; close VPs fisheye.",
+ "Same two-point guide. Block big masses first; verticals stay perfectly vertical &mdash; only the horizontals run to the VPs.",
+ "Guide OFF for this one. Pure freehand ellipses stacking up, each a touch rounder as it nears eye level.",
+ "Guide off again. Ugly is fine &mdash; the guide taught the rule, now your arm proves it learned. Flip horizontal to catch drift."],
+4:[
+ "Soft 6B, pressure only &mdash; no opacity slider. Nine boxes, each a step darker; squint to check the jumps are even, then do a 5-step.",
+ "Alpha Lock the sphere (two-finger swipe right on its layer) so shading never leaks past the edge. Move the light each time; label core shadow and reflected light.",
+ "Pick the light direction first and don&rsquo;t change it. New layer set to Multiply, one gray, paint the shadow planes.",
+ "Technical Pencil for crisp hatching, the same pencil with pressure for blends. Rotate the canvas so every hatch is an easy diagonal.",
+ "Float the mug in the Reference window. Three grays only &mdash; light, mid, dark. No fourth value allowed.",
+ "Drop the photo on a layer, lower it to ~30%, and paint the three big value shapes on top &mdash; train the eye to lump, not to detail."],
+5:[
+ "Hold the pose, glance, measure in palm-widths before any line. Reference window stays empty &mdash; you&rsquo;re drawing from life on the desk.",
+ "Cylinder first on a 35% layer, measuring height against width with the pencil held at arm&rsquo;s length, then refine on top.",
+ "ColorDrop a flat tone into each gap and let the chair emerge from what you left unpainted &mdash; the negative shapes never lie.",
+ "Import the line drawing, rotate the canvas 180&deg; with two fingers, and copy what you see as shapes &mdash; the symbol brain switches off.",
+ "Screenshot in the Reference window; measure every feature against one eye-width and place it. Measure, don&rsquo;t trace.",
+ "Basic forms first with the photo floating in Reference. Flip horizontal halfway to catch the lopsided side."],
+6:[
+ "6B Pencil, ball then the center-line cross only. Fill a page; move the cross to spin the head to a new angle each time.",
+ "Symmetry guide ON (Drawing Guide &rarr; Symmetry, vertical) for these &mdash; draw half, the face mirrors. Learn placement, then drop the crutch.",
+ "Guide off. The jaw-to-neck join is the hard part &mdash; sketch the back skull mass BIG; beginners draw it too small.",
+ "No symmetry. Keep both eyes on the same curved band wrapping the ball; the far eye compresses narrower.",
+ "Reference window with manga or photo refs; 6 of each feature, construction layer under and a clean pass over.",
+ "Float the photo, build the Loomis ball over it on a new layer. Likeness NOT required &mdash; you&rsquo;re drilling structure."],
+7:[
+ "The warm-up button up top sets the timer; line-of-action.com in Split View for poses. One canvas, new layer per pose, never erase &mdash; restate the line.",
+ "Custom timer to 2 min. Gesture line first in blue, then egg ribcage / box pelvis / cylinder limbs on top in darker pencil.",
+ "30s per pose, ONE curve each, big and loose from the shoulder. No mannequin, no detail &mdash; just the action line.",
+ "Float the panel in Reference, find its single line of action first, then hang the simple mannequin on it.",
+ "Draw it balanced, then Duplicate the layer and Transform / redraw the lean and the mid-step &mdash; reuse it to feel the difference."],
+8:[
+ "Flat box palm (a mitten) first, fingers split LAST. 6B Pencil; rotate the canvas so each finger is an easy pull.",
+ "Photograph your hand straight into the Reference window (it holds any pose forever) and build mitten-first from it.",
+ "Wedge plus a toe box. Reference your own foot or a photo &mdash; side, front, &frac34;, and mid-step.",
+ "Drape real fabric, photo it into Reference, two 10-minute studies. Mark where the folds radiate from each pinch point.",
+ "Reference each panel; ink the folds and tap a tiny dot at every tension point so you start to see the pattern."],
+9:[
+ "Open your week-6 heads (or float them in Reference) and redraw at the SAME angles with manga features &mdash; the single best style exercise there is.",
+ "Reference 3 manga, copy 6 eyes. Studio Pen for the lashes; note iris size and exactly where each highlight sits.",
+ "Duplicate a bald base head 5 times. Draw each haircut&rsquo;s silhouette in clumps from the crown whorl, never single strands.",
+ "Six copies of the same head; change only brows, eyes and mouth. Put symbols &mdash; sweat drop, anger cross, blush &mdash; on a separate layer.",
+ "Loomis ball under each, manga features over. Ink with Studio Pen, StreamLine HIGH now for clean confident lines."],
+10:[
+ "Eyeball head-unit gridlines (or a 2D guide). Same character at 6 heads, then 2.5 &mdash; only head size and leg length change.",
+ "Float your week-7 gesture page in Reference; lay clean manga mannequins over those same action lines &mdash; one curve where realism used three.",
+ "Line of action first in blue, then push it ~20% further with lasso-Transform before you commit the mannequin.",
+ "ColorDrop solid black into each finished silhouette on its own layer; anything that disappears or merges, go back and fix the pose.",
+ "Studio Pen, simplified hands &mdash; fist, open, pointing, sword grip, peace sign. Long clean curves, minimal knuckle fuss."],
+11:[
+ "Drop the pencil layer to ~30% blue, ink above with Studio Pen: THICK on the outer/shadow side, THIN inside. Rotate the canvas constantly, slow strokes.",
+ "Multiply layer clipped to the flats (tap layer &rarr; Clipping Mask), one gray, hard-edged shadow shapes. Once upper-left lit, once back-lit rim light.",
+ "Hatching densities by hand, then a halftone/dot texture brush, then 3 ways of spotting solid blacks. Keep the sheet to reuse.",
+ "Drawing Guide &rarr; Perspective, one vanishing point ON the character, Assisted Drawing on; pull straight lines toward it for instant speed lines.",
+ "Reference the panel; match the artist&rsquo;s exact line weights and black spotting. Label the layer &lsquo;study&rsquo; &mdash; copying masters levels up the eye."],
+12:[
+ "Same pose and costume across three side-by-side copies: your manga, a western cartoon (rounder shapes), and semi-real. Duplicate the pose layer to keep them identical.",
+ "Reference 3 artists you love; copy one drawing from each as a study and write 3 bullets per artist on proportion, shape, line and rendering.",
+ "Front, &frac34;, and 3 expressions on one canvas; lock proportions with a horizontal head-unit guide so every view matches.",
+ "Now blend the autopsy findings &mdash; your blue rough &rarr; ink &rarr; flats workflow, choosing the proportion and line you keep returning to.",
+ "Full stack: blue rough &rarr; ink (Studio Pen) &rarr; flats (ColorDrop) &rarr; Multiply shadows clipped &rarr; highlights (Add/Screen) &rarr; tones. Export the time-lapse (Wrench &rarr; Share). You earned it."]
+};
+const clampT = (v,a,b) => v < a ? a : (v > b ? b : v);
+
+/* ---- shared: map a pointer event to viewBox coords of a holder ---- */
+function holdPt(hold, e, vbw, vbh){
+  const r = hold.getBoundingClientRect();
+  return { x:(e.clientX - r.left)/r.width*vbw, y:(e.clientY - r.top)/r.height*vbh };
+}
+
+/* ===================== LIGHT & SHADOW ===================== */
+function lightDir(a){
+  const c = Math.cos(a), s = Math.sin(a);
+  const v = s < -0.38 ? "upper" : (s > 0.38 ? "lower" : "");
+  const h = c < -0.38 ? "left" : (c > 0.38 ? "right" : "");
+  if (v && h) return (v + "-" + h).toUpperCase();
+  if (h) return ("side · " + h).toUpperCase();
+  if (s < 0) return "DIRECTLY ABOVE";
+  return "FROM BELOW";
+}
+function rays(x,y){
+  let s = "";
+  for (let i=0;i<8;i++){
+    const a = i/8*Math.PI*2, c=Math.cos(a), n=Math.sin(a);
+    s += '<line x1="'+(x+c*15).toFixed(1)+'" y1="'+(y+n*15).toFixed(1)
+       + '" x2="'+(x+c*22).toFixed(1)+'" y2="'+(y+n*22).toFixed(1)+'" class="sr" stroke-width="2.4"/>';
+  }
+  return s;
+}
+function buildLight(ang){
+  const cx=150, cy=146, r=78, RR=122;
+  const cosA=Math.cos(ang), sinA=Math.sin(ang), deg=ang*180/Math.PI;
+  const sx=cx+RR*cosA, sy=cy+RR*sinA;
+  const hx=cx+r*0.58*cosA, hy=cy+r*0.58*sinA;
+  const px=-sinA, py=cosA;
+  const ax=cx+r*px, ay=cy+r*py, bx=cx-r*px, by=cy-r*py;
+  const groundY=cy+r+22;
+  const k=64*Math.abs(cosA)+22;
+  const csx=cx-cosA*k*0.55, csrx=30+k*0.55;
+  const lift=clampT(1-Math.max(0,sinA),0,1);
+  const f=n=>n.toFixed(1);
+  return ''
+  + '<svg viewBox="0 0 300 300" role="img" aria-label="Drag the light to move the shadow">'
+  + '<line x1="0" y1="'+groundY+'" x2="300" y2="'+groundY+'" class="sbd" opacity=".5"/>'
+  + '<ellipse cx="'+f(csx)+'" cy="'+groundY+'" rx="'+f(csrx)+'" ry="11" fill="#cfd6d8" opacity="'+(0.85*lift).toFixed(2)+'"/>'
+  + '<clipPath id="lc"><circle cx="'+cx+'" cy="'+cy+'" r="'+(r-3)+'"/></clipPath>'
+  + '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="#fbfcfa" class="si" stroke-width="2.6"/>'
+  + '<g clip-path="url(#lc)"><g transform="rotate('+deg.toFixed(2)+' '+cx+' '+cy+')">'
+  +   '<rect x="'+(cx-2*r)+'" y="'+(cy-2*r)+'" width="'+(2*r)+'" height="'+(4*r)+'" fill="#aeb6ba"/>'
+  + '</g></g>'
+  + '<line x1="'+f(ax)+'" y1="'+f(ay)+'" x2="'+f(bx)+'" y2="'+f(by)+'" stroke="#6b7378" stroke-width="7" stroke-linecap="round" opacity=".55"/>'
+  + '<line x1="'+f(ax)+'" y1="'+f(ay)+'" x2="'+f(bx)+'" y2="'+f(by)+'" class="si thin" opacity=".7"/>'
+  + '<ellipse cx="'+f(hx)+'" cy="'+f(hy)+'" rx="'+f(r*0.17)+'" ry="'+f(r*0.13)+'" fill="#fdfefe" stroke="#e3e9ea" stroke-width="1"/>'
+  + '<line x1="'+f(sx)+'" y1="'+f(sy)+'" x2="'+f(hx)+'" y2="'+f(hy)+'" class="srd" opacity=".65"/>'
+  + '<g class="handle" data-h="sun"><circle cx="'+f(sx)+'" cy="'+f(sy)+'" r="13" class="fr"/>'+rays(sx,sy)+'</g>'
+  + '</svg>';
+}
+function mountLight(el){
+  el.innerHTML =
+    '<div class="thead">Light &amp; shadow — interactive</div>'
+  + '<div class="tsub">Drag the sun. The terminator, core shadow, highlight and cast shadow all move as one system.</div>'
+  + '<div class="thold"></div>'
+  + '<div class="ctrls"><span class="thint">&#9788; drag the sun</span><span class="tread"></span></div>';
+  const hold=el.querySelector(".thold"), read=el.querySelector(".tread");
+  const cx=150, cy=146; let ang=-2.30, active=false;
+  const draw=()=>{ hold.innerHTML=buildLight(ang); read.textContent="LIGHT: "+lightDir(ang); };
+  const set=e=>{ const p=holdPt(hold,e,300,300); ang=Math.atan2(p.y-cy,p.x-cx); };
+  hold.addEventListener("pointerdown",e=>{ active=true; hold.setPointerCapture(e.pointerId); set(e); e.preventDefault(); draw(); });
+  hold.addEventListener("pointermove",e=>{ if(!active)return; set(e); e.preventDefault(); draw(); });
+  const end=()=>{ active=false; };
+  hold.addEventListener("pointerup",end); hold.addEventListener("pointercancel",end);
+  draw();
+}
+
+/* ===================== PROPORTION / STYLE ===================== */
+function propClass(n){
+  if (n<=3) return "CHIBI";
+  if (n<=5) return "STYLIZED";
+  if (n<=6.5) return "ANIME / SHONEN";
+  if (n<=7.5) return "REALISTIC";
+  return "HEROIC";
+}
+function buildProp(N){
+  const topY=22, botY=276, Hh=botY-topY, u=Hh/N, cx=176, f=n=>n.toFixed(1);
+  const headR=u*0.40, headCy=topY+headR+u*0.06;
+  const chinY=topY+u, shY=topY+u*1.12, crotchY=topY+Hh*0.5, kneeY=topY+Hh*0.74, footY=botY;
+  const shW=Hh*0.108, hipW=Hh*0.088, lw=clampT(Hh*0.02,2.2,4.4);
+  // head-unit ticks
+  let ticks="";
+  for (let i=0;i<=Math.ceil(N)+0.001;i++){
+    const y=topY+u*i; if (y>botY+0.5) break;
+    ticks += '<line x1="86" y1="'+f(y)+'" x2="108" y2="'+f(y)+'" class="sbd" opacity=".6"/>';
+    if (i<N-0.001) ticks += '<text x="80" y="'+f(y+4)+'" class="tx txb txs" text-anchor="end">'+i+'</text>';
+  }
+  // eyes only if head is big enough to read
+  let eyes="";
+  if (headR>7){
+    const ey=headCy+headR*0.12, er=Math.max(1.3,headR*0.12);
+    eyes = '<circle cx="'+f(cx-headR*0.38)+'" cy="'+f(ey)+'" r="'+f(er)+'" class="fi"/>'
+         + '<circle cx="'+f(cx+headR*0.38)+'" cy="'+f(ey)+'" r="'+f(er)+'" class="fi"/>';
+  }
+  const torso='M '+f(cx-shW)+' '+f(shY)+' L '+f(cx-hipW)+' '+f(crotchY)
+            + ' L '+f(cx+hipW)+' '+f(crotchY)+' L '+f(cx+shW)+' '+f(shY)+' Z';
+  const armL='M '+f(cx-shW+1)+' '+f(shY+2)+' Q '+f(cx-shW-lw*2)+' '+f((shY+crotchY)/2)+' '+f(cx-hipW*0.7)+' '+f(crotchY+2);
+  const armR='M '+f(cx+shW-1)+' '+f(shY+2)+' Q '+f(cx+shW+lw*2)+' '+f((shY+crotchY)/2)+' '+f(cx+hipW*0.7)+' '+f(crotchY+2);
+  const legL='M '+f(cx-hipW*0.6)+' '+f(crotchY)+' L '+f(cx-hipW*0.7)+' '+f(kneeY)+' L '+f(cx-hipW*0.55)+' '+f(footY);
+  const legR='M '+f(cx+hipW*0.6)+' '+f(crotchY)+' L '+f(cx+hipW*0.7)+' '+f(kneeY)+' L '+f(cx+hipW*0.55)+' '+f(footY);
+  return ''
+  + '<svg viewBox="0 0 352 300" role="img" aria-label="Figure at '+N.toFixed(1)+' heads tall">'
+  + '<line x1="97" y1="'+(topY)+'" x2="97" y2="'+botY+'" class="sb" stroke-width="1.6"/>'
+  + ticks
+  + '<line x1="116" y1="'+f(crotchY)+'" x2="250" y2="'+f(crotchY)+'" class="srd"/>'
+  + '<text x="256" y="'+f(crotchY-5)+'" class="tx txr txs">&#189; HEIGHT</text>'
+  + '<text x="256" y="'+f(crotchY+10)+'" class="tx txr txs">= CROTCH</text>'
+  + '<circle cx="'+f(cx)+'" cy="'+f(headCy)+'" r="'+f(headR)+'" class="si" stroke-width="2.4"/>'
+  + eyes
+  + '<line x1="'+f(cx)+'" y1="'+f(chinY)+'" x2="'+f(cx)+'" y2="'+f(shY)+'" class="si thin"/>'
+  + '<path d="'+torso+'" class="si" stroke-width="'+f(lw)+'" fill="#fbfcfa"/>'
+  + '<path d="'+armL+'" class="si" stroke-width="'+f(lw)+'" fill="none"/>'
+  + '<path d="'+armR+'" class="si" stroke-width="'+f(lw)+'" fill="none"/>'
+  + '<path d="'+legL+'" class="si" stroke-width="'+f(lw)+'" fill="none"/>'
+  + '<path d="'+legR+'" class="si" stroke-width="'+f(lw)+'" fill="none"/>'
+  + '<text x="'+f(cx+4)+'" y="'+f(headCy-headR-6)+'" class="tx txb txs" text-anchor="middle">1 head</text>'
+  + '</svg>';
+}
+function mountProp(el){
+  el.innerHTML =
+    '<div class="thead">Proportion = style — interactive</div>'
+  + '<div class="tsub">Same character, different head-counts. The half-way mark stays at the crotch; only the head grows. That ratio <em>is</em> the style.</div>'
+  + '<div class="thold"></div>'
+  + '<div class="ctrls">'
+  +   '<button class="tchip" data-n="2.5">Chibi</button>'
+  +   '<button class="tchip" data-n="6">Shonen</button>'
+  +   '<button class="tchip" data-n="7.5">Realistic</button>'
+  +   '<button class="tchip" data-n="8">Heroic</button>'
+  +   '<input type="range" min="2" max="8" step="0.5" value="6" aria-label="Heads tall">'
+  +   '<span class="tread"></span>'
+  + '</div>';
+  const hold=el.querySelector(".thold"), read=el.querySelector(".tread"),
+        rng=el.querySelector("input"), chips=[].slice.call(el.querySelectorAll(".tchip"));
+  let N=6;
+  const draw=()=>{
+    hold.innerHTML=buildProp(N);
+    read.textContent=N.toFixed(1)+" HEADS · "+propClass(N);
+    rng.value=N;
+    chips.forEach(c=>c.setAttribute("aria-pressed", Math.abs(parseFloat(c.dataset.n)-N)<0.01 ? "true":"false"));
+  };
+  rng.addEventListener("input",()=>{ N=parseFloat(rng.value); draw(); });
+  chips.forEach(c=>c.addEventListener("click",()=>{ N=parseFloat(c.dataset.n); draw(); }));
+  draw();
+}
+
+/* ===================== TWO-POINT PERSPECTIVE ===================== */
+function buildPersp(s){
+  const hY=96, f=o=>o.x.toFixed(1)+" "+o.y.toFixed(1);
+  const T={x:s.xN,y:s.yT}, B={x:s.xN,y:s.yB}, VPL={x:s.vl,y:hY}, VPR={x:s.vr,y:hY};
+  const xLf=s.xN-s.dL, xRf=s.xN+s.dR;
+  const vIx=(X,P,Q)=>({ x:X, y:P.y+((X-P.x)/((Q.x-P.x)||1e-6))*(Q.y-P.y) });
+  const ix=(p1,p2,p3,p4)=>{
+    const d=(p1.x-p2.x)*(p3.y-p4.y)-(p1.y-p2.y)*(p3.x-p4.x);
+    if (Math.abs(d)<1e-6) return null;
+    const a=p1.x*p2.y-p1.y*p2.x, b=p3.x*p4.y-p3.y*p4.x;
+    return { x:(a*(p3.x-p4.x)-(p1.x-p2.x)*b)/d, y:(a*(p3.y-p4.y)-(p1.y-p2.y)*b)/d };
+  };
+  const lt=vIx(xLf,T,VPL), lb=vIx(xLf,B,VPL), rt=vIx(xRf,T,VPR), rb=vIx(xRf,B,VPR);
+  const bt=ix(lt,VPR,rt,VPL)||{x:s.xN,y:s.yT}, bb=ix(lb,VPR,rb,VPL)||{x:s.xN,y:s.yB};
+  const ln=(a,b,c)=>'<line x1="'+a.x.toFixed(1)+'" y1="'+a.y.toFixed(1)+'" x2="'+b.x.toFixed(1)+'" y2="'+b.y.toFixed(1)+'" class="'+c+'"/>';
+  const hnd=(p,lbl)=>'<g class="handle"><circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="11" class="fr"/>'
+        + '<circle cx="'+p.x.toFixed(1)+'" cy="'+p.y.toFixed(1)+'" r="4.5" fill="#fbfcfa"/>'
+        + (lbl?'<text x="'+p.x.toFixed(1)+'" y="'+(p.y-15).toFixed(1)+'" class="tx txr txs" text-anchor="middle">'+lbl+'</text>':'')+'</g>';
+  return ''
+  + '<svg viewBox="0 0 360 280" role="img" aria-label="Drag the vanishing points and the box">'
+  + '<line x1="0" y1="'+hY+'" x2="360" y2="'+hY+'" class="sb" stroke-width="1.8"/>'
+  + '<text x="6" y="'+(hY-7)+'" class="tx txb txs">HORIZON · EYE LEVEL</text>'
+  // construction guides to the VPs
+  + ln(T,VPL,"sbd")+ln(B,VPL,"sbd")+ln(T,VPR,"sbd")+ln(B,VPR,"sbd")
+  // faces
+  + '<path d="M '+f(T)+' L '+f(lt)+' L '+f(bt)+' L '+f(rt)+' Z" fill="#e9f1f7"/>'
+  + '<path d="M '+f(T)+' L '+f(lt)+' L '+f(lb)+' L '+f(B)+' Z" fill="#fbfcfa"/>'
+  + '<path d="M '+f(T)+' L '+f(rt)+' L '+f(rb)+' L '+f(B)+' Z" fill="#eff2f1"/>'
+  // hidden edges
+  + ln(bt,bb,"si thin")+'<g opacity=".4">'+ln(lb,bb,"si thin")+ln(rb,bb,"si thin")+'</g>'
+  // visible ink edges
+  + ln(T,lt,"si")+ln(T,rt,"si")+ln(lt,bt,"si")+ln(rt,bt,"si")
+  + ln(lt,lb,"si")+ln(rt,rb,"si")+ln(B,lb,"si")+ln(B,rb,"si")
+  + '<line x1="'+T.x.toFixed(1)+'" y1="'+T.y.toFixed(1)+'" x2="'+B.x.toFixed(1)+'" y2="'+B.y.toFixed(1)+'" class="si" stroke-width="3.4"/>'
+  // handles
+  + hnd(VPL,"VP")+hnd(VPR,"VP")
+  + '<g class="handle"><circle cx="'+s.xN.toFixed(1)+'" cy="'+((s.yT+s.yB)/2).toFixed(1)+'" r="10" class="fr"/>'
+  + '<rect x="'+(s.xN-3).toFixed(1)+'" y="'+((s.yT+s.yB)/2-3).toFixed(1)+'" width="6" height="6" fill="#fbfcfa"/></g>'
+  + '</svg>';
+}
+function mountPersp(el){
+  el.innerHTML =
+    '<div class="thead">Two-point perspective — interactive</div>'
+  + '<div class="tsub">Drag either vanishing point along the horizon, or slide the whole box. Every edge stays locked to a VP — that is the entire rule.</div>'
+  + '<div class="thold"></div>'
+  + '<div class="ctrls"><span class="thint">drag the red dots</span><button class="tchip" data-reset="1">Reset</button></div>';
+  const hold=el.querySelector(".thold");
+  const hY=96, def=()=>({vl:34,vr:326,xN:180,yT:150,yB:236,dL:64,dR:64});
+  let s=def(), active=null;
+  const handles=()=>[{k:"vl",x:s.vl,y:hY},{k:"vr",x:s.vr,y:hY},{k:"box",x:s.xN,y:(s.yT+s.yB)/2}];
+  const draw=()=>{ hold.innerHTML=buildPersp(s); };
+  hold.addEventListener("pointerdown",e=>{
+    const p=holdPt(hold,e,360,280); let best=null,bd=26;
+    handles().forEach(h=>{ const d=Math.hypot(h.x-p.x,h.y-p.y); if(d<bd){bd=d;best=h.k;} });
+    if(!best) return; active=best; hold.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  hold.addEventListener("pointermove",e=>{
+    if(!active) return; const p=holdPt(hold,e,360,280);
+    if(active==="vl") s.vl=clampT(p.x,4,s.xN-s.dL-8);
+    else if(active==="vr") s.vr=clampT(p.x,s.xN+s.dR+8,356);
+    else if(active==="box") s.xN=clampT(p.x,s.dL+18,360-s.dR-18);
+    s.vl=clampT(s.vl,4,s.xN-s.dL-8); s.vr=clampT(s.vr,s.xN+s.dR+8,356);
+    e.preventDefault(); draw();
+  });
+  const end=()=>{ active=null; };
+  hold.addEventListener("pointerup",end); hold.addEventListener("pointercancel",end);
+  el.querySelector("[data-reset]").addEventListener("click",()=>{ s=def(); draw(); });
+  draw();
+}
+
+/* ---- mount all placeholders emitted by the curriculum ---- */
+function mountTrainers(){
+  const list = document.querySelectorAll(".trainer[data-trainer]");
+  for (let i=0;i<list.length;i++){
+    const el=list[i]; if (el.dataset.mounted) continue; el.dataset.mounted="1";
+    const t=el.dataset.trainer;
+    if (t==="light") mountLight(el);
+    else if (t==="prop") mountProp(el);
+    else if (t==="persp") mountPersp(el);
+  }
+}
+
+/* ================= today / home ================= */
+function streakN(){
+  const today = dstr(); const y = new Date(); y.setDate(y.getDate()-1);
+  let n = state.streak.count;
+  if (state.streak.last !== today && state.streak.last !== dstr(y)) n = 0;
+  return n;
+}
+function curWeekIndex(){
+  for (let gw=0; gw<flatWeeks.length; gw++){
+    const wk = flatWeeks[gw];
+    let d = 0; for (let j=0;j<wk.drills.length;j++) if (state.done[gw+":"+j]) d++;
+    if (d < wk.drills.length) return gw;
+  }
+  return -1;
+}
+function dailyPrompt(force){
+  const today = dstr();
+  if (force || !state.todayPrompt || state.todayPrompt.date !== today){
+    const t = pick(P.chars) + " " + pick(P.actions) + " &mdash; " + pick(P.styles)
+            + " &middot; challenge: " + pick(P.challenges);
+    state.todayPrompt = { date: today, text: t }; save();
+  }
+  return state.todayPrompt.text;
+}
+function startSession(sec, n){
+  state.cfg.poseSec = sec; state.cfg.poses = n; save(); syncCfgUI();
+  showTab("timer");
+  T.phase = "idle"; T.pose = 0;
+  startPose(1); beep(880,.1); if (!T.int) T.int = setInterval(tTick, 100);
+  tRender();
+}
+function renderToday(){
+  const host = $("#todayBody"); if (!host) return;
+  const now = new Date(), h = now.getHours();
+  const greet = h < 12 ? "Good morning" : (h < 18 ? "Good afternoon" : "Good evening");
+  const DN = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const MN = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const dateStr = DN[now.getDay()] + " &middot; " + MN[now.getMonth()] + " " + now.getDate();
+  const sn = streakN();
+
+  // totals
+  const phT = CURRICULUM.map(() => ({t:0,d:0}));
+  let total = 0, done = 0;
+  flatWeeks.forEach((wk,g) => {
+    const nn = wk.drills.length; let dd = 0;
+    for (let j=0;j<nn;j++) if (state.done[g+":"+j]) dd++;
+    total += nn; done += dd; phT[wk.pi].t += nn; phT[wk.pi].d += dd;
+  });
+  const minutes = Math.round(state.sessions.reduce((a,s) => a + s.n*s.s, 0) / 60);
+
+  const status = sn > 0
+    ? "Day " + sn + " streak &mdash; do anything below to keep the stamp alive."
+    : (done > 0
+        ? "Streak reset. Check one drill or finish a timer set to start a fresh one."
+        : "Fresh canvas. Check one drill or run a timer set to light your first stamp.");
+
+  // step 2: current week
+  const gw = curWeekIndex();
+  let stepTwoTitle, weekHTML, weekTag = "";
+  if (gw === -1){
+    stepTwoTitle = "Course complete";
+    weekHTML = '<div class="sd">Every drill is inked &mdash; all 12 weeks. The loop restarts harder: '
+      + 'revisit any week, or just draw. Your warm-up and timer never expire.</div>'
+      + '<button class="linkish" data-act="jump" data-gw="' + (flatWeeks.length-1) + '">Reopen the curriculum &#8599;</button>';
+  } else {
+    const wk = flatWeeks[gw], ph = CURRICULUM[wk.pi];
+    weekTag = '<span class="sx">Week ' + wk.w + '</span>';
+    stepTwoTitle = "This week &mdash; " + wk.title;
+    let dd = 0; for (let j=0;j<wk.drills.length;j++) if (state.done[gw+":"+j]) dd++;
+    const next = [];
+    wk.drills.forEach((d,j) => { if (!state.done[gw+":"+j]) next.push({ id: gw+":"+j, d: d }); });
+    const show = next.slice(0,3);
+    weekHTML = '<div class="sd">' + ph.phase + " &middot; " + ph.name
+      + " &mdash; you&rsquo;ve inked " + dd + " of " + wk.drills.length + " drills here.</div>"
+      + '<div class="drills">'
+      + show.map(o => '<label class="drill"><input type="checkbox" data-id="' + o.id + '"><span>' + o.d + '</span></label>').join("")
+      + '</div>'
+      + (next.length > 3 ? '<div class="sd" style="margin-top:8px">+ ' + (next.length-3) + " more drills this week.</div>" : "")
+      + '<button class="linkish" data-act="jump" data-gw="' + gw + '">Open the full week &#8599;</button>';
+  }
+
+  const pod = dailyPrompt();
+  const podCap = pod.charAt(0).toUpperCase() + pod.slice(1);
+
+  const phaseRows = phT.map((p,i) => {
+    const pc = p.t ? Math.round(p.d/p.t*100) : 0;
+    return '<div class="row"><span class="nm">' + CURRICULUM[i].name + '</span>'
+      + '<div class="bar"><i style="width:' + pc + '%"></i></div>'
+      + '<span class="pc">' + pc + '%</span></div>';
+  }).join("");
+
+  host.innerHTML =
+    '<div class="card"><div class="t-hero">'
+  +   '<div class="greet"><h2>' + greet + '</h2><div class="sub">' + dateStr + '</div></div>'
+  +   '<div class="t-streak ' + (sn ? "" : "zero") + '"><b>' + sn + '</b><span>day streak</span></div>'
+  + '</div><p class="t-status">' + status + '</p></div>'
+
+  + '<div class="card"><div class="eyebrow">Today&rsquo;s session</div>'
+  +   '<div class="t-step"><div class="sh"><span class="sn">1</span><span class="st">Warm up</span><span class="sx">5 min</span></div>'
+  +     '<div class="sd">Loosen the arm before anything serious &mdash; fast gesture poses, drawn from the shoulder, on a throwaway canvas.</div>'
+  +     '<button class="btn primary" data-act="warmup">Start warm-up &middot; 10 &times; 30s</button> '
+  +     '<button class="linkish" data-act="timer">custom timer &#8599;</button></div>'
+  +   '<div class="t-step"><div class="sh"><span class="sn">2</span><span class="st">' + stepTwoTitle + '</span>' + weekTag + '</div>' + weekHTML + '</div>'
+  +   '<div class="t-step"><div class="sh"><span class="sn">3</span><span class="st">Draw something</span><span class="sx">prompt of the day</span></div>'
+  +     '<div class="pod">' + podCap + '</div>'
+  +     '<div style="margin-top:9px;display:flex;gap:16px"><button class="linkish" data-act="reroll">reroll &#8635;</button>'
+  +     '<button class="linkish" data-act="prompts">more prompts &#8599;</button></div></div>'
+  + '</div>'
+
+  + '<div class="card"><div class="eyebrow">Progress</div>'
+  +   '<div class="t-stats">'
+  +     '<div class="t-stat"><b>' + sn + '</b><span>day streak</span></div>'
+  +     '<div class="t-stat"><b>' + done + '</b><span>of ' + total + ' inked</span></div>'
+  +     '<div class="t-stat"><b>' + minutes + '</b><span>timer min</span></div>'
+  +     '<div class="t-stat"><b>' + state.sessions.length + '</b><span>sessions</span></div>'
+  +   '</div>'
+  +   '<div class="t-phasebar">' + phaseRows + '</div>'
+  + '</div>';
+}
+let todayWired = false;
+function wireToday(){
+  if (todayWired) return; todayWired = true;
+  const root = $("#todayBody");
+  root.addEventListener("change", e => {
+    const cb = e.target.closest('input[type=checkbox][data-id]'); if (!cb) return;
+    const id = cb.dataset.id;
+    if (cb.checked){ state.done[id] = true; touchStreak(); } else delete state.done[id];
+    const mir = $('#weeks input[data-id="' + id + '"]'); if (mir) mir.checked = cb.checked;
+    save(); updateProgress(); renderToday();
+  });
+  root.addEventListener("click", e => {
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    const a = b.dataset.act;
+    if (a === "warmup") startSession(30, 10);
+    else if (a === "timer") showTab("timer");
+    else if (a === "prompts") showTab("prompts");
+    else if (a === "reroll"){ dailyPrompt(true); renderToday(); }
+    else if (a === "jump"){
+      const gw = b.dataset.gw; showTab("curriculum");
+      const d = $('#weeks details.week[data-gw="' + gw + '"]');
+      if (d){ d.open = true; setTimeout(() => d.scrollIntoView({ behavior:"smooth", block:"start" }), 60); }
+    }
+  });
+}
+
+/* ================= boot ================= */
+buildWeeks();
+mountTrainers();
+wireToday();
+renderToday();
+updateProgress();
+renderHanko();
+syncCfgUI();
+tRender();
+renderLog();
+genRows();
+showTab(state.tab || "curriculum");
+</script>
+</body>
+</html>
