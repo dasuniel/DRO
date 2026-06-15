@@ -404,7 +404,77 @@ svg .handle{cursor:grab;}
 .t-phasebar .row .bar{flex:1;height:7px;margin:0;border-width:1px;}
 .t-phasebar .row .pc{width:32px;text-align:right;flex:none;}
 @media (max-width:520px){ .t-stats{grid-template-columns:repeat(2,1fr);} .t-phasebar .row .nm{width:64px;} }
-/* ---------------- per-drill Procreate how-to ---------------- */
+/* ---------------- critique tab ---------------- */
+#view-critique{padding-bottom:40px;}
+.crit-intro{font-family:var(--font-body);font-size:13px;line-height:1.6;color:var(--ink-soft);margin-bottom:18px;}
+.crit-intro b{color:var(--ink);}
+/* week picker */
+.wk-picker{display:flex;flex-direction:column;gap:8px;margin-bottom:18px;}
+.wk-picker label{font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);}
+.wk-picker select{font-family:var(--font-mono);font-size:12px;padding:7px 10px;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);border-radius:0;-webkit-appearance:none;appearance:none;cursor:pointer;width:100%;}
+/* drop zone */
+.drop-zone{border:2px dashed var(--blue);padding:28px 16px;text-align:center;cursor:pointer;transition:background .15s;position:relative;}
+.drop-zone.over,.drop-zone:hover{background:var(--paper-2);}
+.drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.drop-zone .dz-icon{font-size:30px;display:block;margin-bottom:8px;}
+.drop-zone .dz-label{font-family:var(--font-mono);font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--blue);}
+.drop-zone .dz-sub{font-family:var(--font-body);font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
+/* preview */
+.preview-wrap{margin:14px 0;display:none;}
+.preview-wrap.show{display:block;}
+.preview-wrap img{max-width:100%;border:1.5px solid var(--ink);display:block;}
+.preview-meta{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin-top:5px;}
+/* run button */
+.crit-run{width:100%;margin-top:14px;font-size:13px;padding:13px 20px;letter-spacing:.06em;}
+.crit-run:disabled{opacity:.45;cursor:not-allowed;}
+/* result */
+.crit-result{display:none;margin-top:20px;}
+.crit-result.show{display:block;}
+/* score ring */
+.score-ring-wrap{display:flex;align-items:center;gap:18px;margin-bottom:20px;flex-wrap:wrap;}
+.score-ring{flex:none;position:relative;width:88px;height:88px;}
+.score-ring svg{display:block;width:88px;height:88px;}
+.score-ring .ring-track{fill:none;stroke:var(--paper-2);stroke-width:9;}
+.score-ring .ring-fill{fill:none;stroke-width:9;stroke-linecap:round;transform:rotate(-90deg);transform-origin:44px 44px;transition:stroke-dashoffset .9s ease;}
+.score-ring .ring-fill.good{stroke:var(--ink);}
+.score-ring .ring-fill.ok{stroke:var(--blue);}
+.score-ring .ring-fill.grow{stroke:#9b6fcf;}
+.score-ring .ring-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-size:24px;color:var(--ink);}
+.score-meta{flex:1;min-width:140px;}
+.score-title{font-family:var(--font-display);font-size:19px;font-weight:400;line-height:1.05;margin-bottom:4px;}
+.score-week{font-family:var(--font-mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft);}
+/* categories */
+.cat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:18px;}
+@media (max-width:460px){.cat-grid{grid-template-columns:1fr;}}
+.cat-card{border:1.4px solid var(--ink);padding:10px 11px;}
+.cat-card .cat-name{font-family:var(--font-mono);font-size:9px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:5px;}
+.cat-card .cat-bar-wrap{height:5px;background:var(--paper-2);border:1px solid var(--guide);margin-bottom:6px;}
+.cat-card .cat-bar{height:100%;transition:width .8s ease;}
+.cat-card .cat-bar.good{background:var(--ink);}
+.cat-card .cat-bar.ok{background:var(--blue);}
+.cat-card .cat-bar.grow{background:#9b6fcf;}
+.cat-card .cat-note{font-family:var(--font-body);font-size:11.5px;line-height:1.45;color:var(--ink-soft);}
+/* sections */
+.crit-section{margin-bottom:16px;}
+.crit-section .cs-head{font-family:var(--font-mono);font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);border-bottom:1px solid var(--guide);padding-bottom:5px;margin-bottom:10px;}
+.crit-section ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:7px;}
+.crit-section li{display:flex;gap:10px;font-family:var(--font-body);font-size:13px;line-height:1.5;color:var(--ink-soft);}
+.crit-section li .bullet{flex:none;font-size:14px;line-height:1.4;}
+.crit-section li b{color:var(--ink);}
+/* next drill card */
+.next-drill-card{background:var(--paper-2);border-left:3px solid var(--red);padding:11px 13px;margin-top:6px;}
+.next-drill-card .nd-label{font-family:var(--font-mono);font-size:8.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:5px;}
+.next-drill-card .nd-text{font-family:var(--font-body);font-size:13px;line-height:1.5;color:var(--ink);}
+/* spinner */
+.spinner-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;padding:36px 0;display:none;}
+.spinner-wrap.show{display:flex;}
+.spinner{width:36px;height:36px;border:3px solid var(--paper-2);border-top-color:var(--ink);border-radius:50%;animation:spin .8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner-msg{font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);}
+/* error */
+.crit-error{border-left:3px solid var(--red);padding:10px 13px;background:var(--paper-2);font-family:var(--font-body);font-size:13px;color:var(--ink-soft);display:none;margin-top:14px;}
+.crit-error.show{display:block;}
+</style>
 .drill-item{margin-bottom:4px;}
 .howto{display:flex;gap:8px;margin:1px 0 9px 30px;padding:7px 10px;
   background:var(--paper-2);border-left:2.5px solid var(--blue);}
@@ -433,6 +503,7 @@ svg .handle{cursor:grab;}
   <button class="tab" role="tab" data-view="curriculum" aria-selected="false">Curriculum</button>
   <button class="tab" role="tab" data-view="timer" aria-selected="false">Pose timer</button>
   <button class="tab" role="tab" data-view="prompts" aria-selected="false">Prompts</button>
+  <button class="tab" role="tab" data-view="critique" aria-selected="false">Critique</button>
 </nav>
 
 <main>
@@ -687,6 +758,39 @@ svg .handle{cursor:grab;}
 
 
 
+<!-- ===================== CRITIQUE ===================== -->
+<section id="view-critique" role="tabpanel" hidden>
+  <div class="eyebrow">AI drawing critique</div>
+  <p class="crit-intro">Upload a photo of your drawing (or a screenshot from Procreate) and pick the week it belongs to. Trazo will look at it as a <b>drawing teacher</b>, score it against what that week is actually training, and tell you exactly where to push next.</p>
+
+  <div class="wk-picker">
+    <label for="critWeekSel">Which week is this for?</label>
+    <select id="critWeekSel"></select>
+  </div>
+
+  <div class="drop-zone" id="critDrop">
+    <input type="file" id="critFile" accept="image/*" aria-label="Upload drawing">
+    <span class="dz-icon">✏️</span>
+    <div class="dz-label">Tap to upload &middot; or drag here</div>
+    <div class="dz-sub">JPG, PNG or screenshot from Procreate &mdash; any size</div>
+  </div>
+
+  <div class="preview-wrap" id="critPreview">
+    <img id="critImg" src="" alt="Your drawing">
+    <div class="preview-meta" id="critMeta"></div>
+  </div>
+
+  <button class="btn primary crit-run" id="critRun" disabled>Judge my drawing</button>
+
+  <div class="crit-error" id="critErr"></div>
+
+  <div class="spinner-wrap" id="critSpinner">
+    <div class="spinner"></div>
+    <div class="spinner-msg" id="critSpinMsg">Reading your lines&hellip;</div>
+  </div>
+
+  <div class="crit-result" id="critResult"></div>
+</section>
 </main>
 
 <footer>
@@ -1973,11 +2077,291 @@ function wireToday(){
   });
 }
 
+/* ================= critique module ================= */
+(function(){
+
+/* ---- week selector ---- */
+function buildWeekSel(){
+  const sel = $("#critWeekSel"); if (!sel) return;
+  flatWeeks.forEach((wk, gw) => {
+    const o = document.createElement("option");
+    o.value = gw;
+    o.textContent = "Week " + wk.w + " – " + wk.title
+      + " (" + CURRICULUM[wk.pi].phase + ": " + CURRICULUM[wk.pi].name + ")";
+    if (gw === Math.max(0, curWeekIndex() - 1) || (curWeekIndex() === 0 && gw === 0)) o.selected = true;
+    sel.appendChild(o);
+  });
+  // try to default to the active week (or the one just before it)
+  const cw = curWeekIndex();
+  if (cw >= 0) sel.value = cw;
+}
+
+/* ---- image loading ---- */
+let imgB64 = null, imgMime = null;
+function loadFile(file){
+  if (!file || !file.type.startsWith("image/")) return;
+  imgMime = file.type || "image/jpeg";
+  const reader = new FileReader();
+  reader.onload = e => {
+    imgB64 = e.target.result.split(",")[1];
+    const img = $("#critImg");
+    img.src = e.target.result;
+    const kb = Math.round(file.size / 1024);
+    $("#critMeta").textContent = file.name + " · " + kb + " KB · " + file.type;
+    $("#critPreview").classList.add("show");
+    $("#critRun").disabled = false;
+    $("#critResult").classList.remove("show");
+    $("#critErr").classList.remove("show");
+  };
+  reader.readAsDataURL(file);
+}
+
+/* ---- spinner messages ---- */
+const MSGS = [
+  "Reading your lines\u2026",
+  "Checking proportions\u2026",
+  "Looking at the values\u2026",
+  "Comparing to week goals\u2026",
+  "Writing your feedback\u2026",
+];
+let msgIdx = 0, msgInt = null;
+function spinStart(){
+  msgIdx = 0; $("#critSpinMsg").textContent = MSGS[0];
+  $("#critSpinner").classList.add("show");
+  msgInt = setInterval(() => {
+    msgIdx = (msgIdx + 1) % MSGS.length;
+    $("#critSpinMsg").textContent = MSGS[msgIdx];
+  }, 1800);
+}
+function spinStop(){ clearInterval(msgInt); $("#critSpinner").classList.remove("show"); }
+
+/* ---- build the system prompt ---- */
+function buildPrompt(wk){
+  const ph = CURRICULUM[wk.pi];
+  const drillList = wk.drills.map((d,i) => (i+1) + ". " + d).join("\n");
+  const learnList = wk.learn.join("\n");
+  const ENT = {'&ndash;':'\u2013','&mdash;':'\u2014','&rarr;':'\u2192','&middot;':'\u00B7',
+    '&rsquo;':'\u2019','&lsquo;':'\u2018','&ldquo;':'\u201C','&rdquo;':'\u201D',
+    '&frac34;':'\u00BE','&times;':'\u00D7','&gt;':'>','&lt;':'<','&amp;':'&',
+    '&hellip;':'\u2026','&bull;':'\u2022','&sbquo;':',','&nbsp;':' '};
+  const deHtml = s => s.replace(/&[a-z0-9#]+;/gi, c => ENT[c] || '');
+  const proTips = (PRO[wk.w] || []).map((p,i) => (i+1)+". "+deHtml(p)).join("\n");
+
+  return `You are a professional drawing teacher and illustrator who also knows Procreate well. A student is learning to draw systematically, and they have just uploaded a photo of a drawing they did for a specific week of their curriculum.
+
+CURRICULUM CONTEXT
+Phase: ${ph.phase} – ${ph.name}
+Week ${wk.w}: ${wk.title}
+Week goal: ${wk.goal}
+
+What this week is training:
+${learnList}
+
+The drills for this week (the student has done one or more of these):
+${drillList}
+
+Procreate-specific tips for this week's drills:
+${proTips}
+
+YOUR JOB
+Look at the drawing as a teacher, not a cheerleader. Judge it ONLY against what this specific week is training – do not penalise a week-1 student for imperfect anatomy, but do penalise them for relying on wrist movement instead of shoulder strokes.
+
+Return ONLY a JSON object, no markdown, no preamble, no explanation outside the JSON. The schema:
+
+{
+  "score": <integer 1-10>,
+  "headline": "<2-6 word summary of the overall impression>",
+  "categories": [
+    { "name": "<3-5 word label>", "score": <1-10>, "note": "<1 sentence, specific to what you see>" },
+    { "name": "<3-5 word label>", "score": <1-10>, "note": "<1 sentence>" },
+    { "name": "<3-5 word label>", "score": <1-10>, "note": "<1 sentence>" },
+    { "name": "<3-5 word label>", "score": <1-10>, "note": "<1 sentence>" }
+  ],
+  "strengths": [
+    { "point": "<what they did well – be specific about what you see in the image>" },
+    { "point": "<another strength>" }
+  ],
+  "improvements": [
+    { "point": "<the single most important thing to fix, with a concrete how-to>" },
+    { "point": "<second improvement>" },
+    { "point": "<third improvement>" }
+  ],
+  "next_drill": "<the exact drill from the list above they should repeat or tackle next, plus one sentence on what to do differently this time>",
+  "procreate_tip": "<one specific Procreate action, brush, or gesture that would directly fix the main weakness you see>"
+}
+
+Categories must be named after what THIS WEEK trains (e.g. for a line week: "Line confidence", "Stroke direction", "Arm movement", "Consistency"). Make them specific to the week, not generic.
+
+Be honest and direct. A score of 7 means genuinely solid work. A score of 4 means real problems to fix. Do not inflate scores.`;
+}
+
+/* ---- parse Claude's JSON response ---- */
+function parseResponse(text){
+  let clean = text.trim();
+  const fence = clean.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fence) clean = fence[1].trim();
+  return JSON.parse(clean);
+}
+
+/* ---- ring colour class ---- */
+function ringClass(s){ return s >= 7 ? "good" : (s >= 5 ? "ok" : "grow"); }
+
+/* ---- render the critique result ---- */
+function renderResult(data, wk){
+  const circ = 2 * Math.PI * 35; // r=35
+  const pct  = Math.max(0, Math.min(10, data.score)) / 10;
+  const dash  = (circ * pct).toFixed(1);
+  const rc    = ringClass(data.score);
+
+  const catCards = (data.categories || []).map(c => {
+    const cc = ringClass(c.score);
+    return `<div class="cat-card">
+      <div class="cat-name">${c.name}</div>
+      <div class="cat-bar-wrap"><div class="cat-bar ${cc}" style="width:${c.score*10}%"></div></div>
+      <div class="cat-note">${c.note}</div>
+    </div>`;
+  }).join("");
+
+  const strengths = (data.strengths || []).map(s =>
+    `<li><span class="bullet">✓</span><span>${s.point}</span></li>`).join("");
+
+  const improvements = (data.improvements || []).map((im, i) =>
+    `<li><span class="bullet">${i+1}.</span><span>${im.point}</span></li>`).join("");
+
+  const html = `
+  <div class="score-ring-wrap">
+    <div class="score-ring">
+      <svg viewBox="0 0 88 88">
+        <circle class="ring-track" cx="44" cy="44" r="35"/>
+        <circle class="ring-fill ${rc}" cx="44" cy="44" r="35"
+          stroke-dasharray="${dash} ${circ.toFixed(1)}"
+          stroke-dashoffset="0"/>
+      </svg>
+      <div class="ring-num">${data.score}</div>
+    </div>
+    <div class="score-meta">
+      <div class="score-title">${data.headline || "Critique"}</div>
+      <div class="score-week">Week ${wk.w} &middot; ${wk.title}</div>
+    </div>
+  </div>
+
+  <div class="cat-grid">${catCards}</div>
+
+  <div class="crit-section">
+    <div class="cs-head">What's working</div>
+    <ul>${strengths}</ul>
+  </div>
+
+  <div class="crit-section">
+    <div class="cs-head">Where to push</div>
+    <ul>${improvements}</ul>
+  </div>
+
+  <div class="crit-section">
+    <div class="cs-head">Do this next</div>
+    <div class="next-drill-card">
+      <div class="nd-label">Next drill</div>
+      <div class="nd-text">${data.next_drill || ""}</div>
+    </div>
+    ${data.procreate_tip ? `<div class="howto" style="margin:10px 0 0"><span class="howtag">In Procreate</span><span>${data.procreate_tip}</span></div>` : ""}
+  </div>`;
+
+  const res = $("#critResult");
+  res.innerHTML = html;
+  res.classList.add("show");
+
+  // animate bars after paint
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    const fills = res.querySelectorAll(".ring-fill");
+    fills.forEach(f => {
+      const da = f.getAttribute("stroke-dasharray");
+      f.style.strokeDasharray = "0 " + (2*Math.PI*35).toFixed(1);
+      requestAnimationFrame(() => { f.style.strokeDasharray = da; });
+    });
+  }));
+}
+
+/* ---- API call ---- */
+async function runCritique(){
+  if (!imgB64) return;
+  const gw    = parseInt($("#critWeekSel").value);
+  const wk    = flatWeeks[gw];
+  const system = buildPrompt(wk);
+
+  $("#critRun").disabled = true;
+  $("#critErr").classList.remove("show");
+  $("#critResult").classList.remove("show");
+  spinStart();
+
+  try {
+    const resp = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 1000,
+        system: system,
+        messages: [{
+          role: "user",
+          content: [
+            { type: "image", source: { type: "base64", media_type: imgMime, data: imgB64 } },
+            { type: "text",  text: "Please critique this drawing." }
+          ]
+        }]
+      })
+    });
+    const data = await resp.json();
+    if (!resp.ok) throw new Error(data.error?.message || "API error " + resp.status);
+    const text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+    const parsed = parseResponse(text);
+    spinStop();
+    renderResult(parsed, wk);
+  } catch(err) {
+    spinStop();
+    const errEl = $("#critErr");
+    errEl.textContent = "Critique failed: " + err.message + ". Make sure you have an internet connection and try again.";
+    errEl.classList.add("show");
+  } finally {
+    $("#critRun").disabled = false;
+  }
+}
+
+/* ---- wire events after DOM ready ---- */
+function initCritique(){
+  buildWeekSel();
+
+  const drop  = $("#critDrop");
+  const input = $("#critFile");
+
+  input.addEventListener("change", () => { if (input.files[0]) loadFile(input.files[0]); });
+
+  drop.addEventListener("dragover",  e => { e.preventDefault(); drop.classList.add("over"); });
+  drop.addEventListener("dragleave", e => { drop.classList.remove("over"); });
+  drop.addEventListener("drop",      e => {
+    e.preventDefault(); drop.classList.remove("over");
+    const f = e.dataTransfer.files[0]; if (f) loadFile(f);
+  });
+
+  // allow pasting a screenshot directly (e.g. from Procreate Share → copy)
+  document.addEventListener("paste", e => {
+    if (document.getElementById("view-critique").hidden) return;
+    const item = Array.from(e.clipboardData.items).find(i => i.type.startsWith("image/"));
+    if (item) loadFile(item.getAsFile());
+  });
+
+  $("#critRun").addEventListener("click", runCritique);
+}
+
+/* expose for boot */
+window.__initCritique = initCritique;
+})();
+
 /* ================= boot ================= */
 buildWeeks();
 mountTrainers();
 wireToday();
 renderToday();
+if (window.__initCritique) window.__initCritique();
 updateProgress();
 renderHanko();
 syncCfgUI();
